@@ -1,0 +1,1041 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SOPIA | Pharma SOP Intelligence</title>
+<meta name="description" content="회사 SOP와 대한민국약전(KP) 시험법을 비교하고 KP 개정 영향을 관리하는 SOPIA 시제품">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 56'%3E%3Cpath fill='%23003F98' d='M13 37 L8 53 L26 41 Z'/%3E%3Cpath fill='%23003F98' d='M18 13 H31 V43 H18 A15 15 0 0 1 18 13 Z'/%3E%3Cpath fill='%238DC31E' d='M33 13 H46 A15 15 0 0 1 46 43 H33 Z'/%3E%3Crect fill='%23fff' x='11' y='21' width='15' height='2.8' rx='1.4'/%3E%3Crect fill='%23fff' x='9' y='26.6' width='18' height='2.8' rx='1.4'/%3E%3Crect fill='%23fff' x='11' y='32.2' width='11' height='2.8' rx='1.4'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* SOPIA 디자인 토큰 · MVP 라이트 모드 고정 */
+:root{
+  color-scheme:light;
+  --navy:#003F98;--navy-hover:#00347D;--green:#8DC31E;--green-text:#4C7A0C;
+  --bg:#F5F7FB;--canvas:#E8ECF2;--surface:#FFFFFF;--text:#111D33;--text-sub:#59657A;--border:#DCE2EC;
+  --ai-bg:#EBF0F8;--user-bg:#F0F2F5;--lime-bg:#F1F7E4;
+  --s-match:#1F7A4D;--s-match-bg:#E6F4EC;
+  --s-diff:#B54708;--s-diff-bg:#FFF0E3;
+  --s-miss:#B42318;--s-miss-bg:#FDECEA;
+  --s-review:#8A6100;--s-review-bg:#FFF6D6;
+  --s-na:#59657A;--s-na-bg:#EEF1F5;
+  --font-brand:"Outfit","IBM Plex Sans KR",system-ui,sans-serif;
+  --font-body:"IBM Plex Sans KR",system-ui,-apple-system,"Malgun Gothic",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --radius:14px;--shadow:0 1px 2px rgba(17,29,51,.04),0 6px 18px rgba(17,29,51,.05);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.6}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--navy)}
+h1,h2,h3,h4{margin:0;line-height:1.3;text-wrap:balance}
+p{margin:0}
+.mono{font-family:var(--font-mono);font-size:.86em}
+.sub{color:var(--text-sub)}
+.small{font-size:13px}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+
+/* 레이아웃 */
+.app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+.side{background:var(--surface);border-right:1px solid var(--border);padding:18px 14px;display:flex;flex-direction:column;gap:18px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;padding:4px 8px}
+.logo svg{width:38px;height:auto;flex:none}
+.logo .word{font-family:var(--font-brand);font-weight:800;font-size:25px;letter-spacing:-.01em;line-height:1}
+.logo .word b{color:var(--navy);font-weight:800}.logo .word i{color:var(--green);font-style:normal}
+.logo small{display:block;font-family:var(--font-mono);font-size:9.5px;letter-spacing:.08em;color:var(--text-sub);margin-top:4px;text-transform:uppercase}
+.menu{display:flex;flex-direction:column;gap:2px}
+.menu a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;color:var(--text-sub);text-decoration:none;font-size:14px;font-weight:500}
+.menu a svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.menu a:hover{background:var(--user-bg);color:var(--text)}
+.menu a.active{background:var(--ai-bg);color:var(--navy);font-weight:600}
+.menu a.active::before{content:"";width:3px;height:18px;border-radius:2px;background:var(--green);margin-left:-10px;margin-right:-3px}
+.menu .count{margin-left:auto;font-size:11px;font-weight:700;background:var(--s-miss);color:#fff;border-radius:999px;padding:0 7px;line-height:18px}
+.side-foot{margin-top:auto;font-size:12px;color:var(--text-sub);border-top:1px solid var(--border);padding-top:12px;display:grid;gap:6px}
+.side-foot a{font-weight:600;text-decoration:none}
+.main{min-width:0;display:flex;flex-direction:column}
+.top{display:flex;align-items:center;gap:12px;padding:14px 28px;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20}
+.top h1{font-size:19px;font-weight:700}
+.top .crumb{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;color:var(--text-sub);text-transform:uppercase}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:4px 10px;color:var(--text-sub);white-space:nowrap}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:#C6CEDA}
+.chip.demo{border-color:#E9D9A6;background:var(--s-review-bg);color:var(--s-review)}
+.icon-btn{position:relative;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface);display:grid;place-items:center;color:var(--text-sub)}
+.icon-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.icon-btn .badge{position:absolute;top:-5px;right:-5px;background:var(--s-miss);color:#fff;font-size:10px;font-weight:700;border-radius:999px;min-width:18px;height:18px;display:grid;place-items:center;padding:0 4px}
+.user-chip{display:flex;align-items:center;gap:8px;font-size:13px;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:3px 12px 3px 4px;white-space:nowrap}
+.user-chip .av{width:28px;height:28px;border-radius:50%;background:var(--ai-bg);color:var(--navy);display:grid;place-items:center;font-weight:700;font-size:12px}
+.menu-toggle{display:none}
+.view{padding:24px 28px 48px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-content:start;max-width:1280px;width:100%}
+.view>*,.grid>*{min-width:0}
+
+/* 공통 컴포넌트 */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.card-head h2{font-size:17px;font-weight:700}
+.card-head p{font-size:13px;color:var(--text-sub);margin-top:2px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g-main{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border-radius:10px;padding:9px 16px;font-size:14px;font-weight:600;border:1px solid var(--border);background:var(--surface);color:var(--text);white-space:nowrap;text-decoration:none}
+.btn:hover{background:var(--user-bg)}
+.btn.primary{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.primary:hover{background:var(--navy-hover)}
+.btn.sm{padding:6px 11px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row.end{justify-content:flex-end}
+.notice{display:flex;gap:10px;align-items:flex-start;font-size:13px;border-radius:12px;padding:11px 14px;background:var(--s-review-bg);color:#5C4300;border:1px solid #EEDDA8}
+.notice.info{background:var(--ai-bg);color:#183A6B;border-color:#D3DFF0}
+.notice b{white-space:nowrap}
+input[type=text],input[type=search],select,textarea{border:1px solid var(--border);border-radius:10px;background:var(--surface);padding:9px 12px;font-size:14px;width:100%}
+textarea{resize:vertical;min-height:90px;line-height:1.6}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#9DB4DA;box-shadow:0 0 0 3px rgba(0,63,152,.09)}
+label.field{display:grid;gap:6px;font-size:13px;font-weight:600;color:var(--text)}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{background:#F8FAFC;text-align:left;font-weight:600;color:var(--text-sub);font-size:12.5px;padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+tr:last-child td{border-bottom:0}
+tr.click{cursor:pointer}
+tr.click:hover td{background:#FAFBFD}
+tr.sel td{background:var(--ai-bg)!important}
+.empty{text-align:center;padding:36px 16px;color:var(--text-sub);display:grid;gap:10px;justify-items:center}
+
+/* 상태 배지 */
+.st{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px 2px 7px;white-space:nowrap}
+.st::before{font-size:11px;line-height:1}
+.st.match{color:var(--s-match);background:var(--s-match-bg)}.st.match::before{content:"✓"}
+.st.diff{color:var(--s-diff);background:var(--s-diff-bg)}.st.diff::before{content:"≠"}
+.st.miss{color:var(--s-miss);background:var(--s-miss-bg)}.st.miss::before{content:"!"}
+.st.review{color:var(--s-review);background:var(--s-review-bg)}.st.review::before{content:"?"}
+.st.na{color:var(--s-na);background:var(--s-na-bg)}.st.na::before{content:"–"}
+.pri{font-size:12px;font-weight:600}
+.pri.high{color:var(--s-miss)}.pri.mid{color:var(--s-review)}.pri.low{color:var(--text-sub)}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;border-radius:6px;padding:1px 7px;background:var(--user-bg);color:var(--text-sub)}
+.tag.green{background:var(--lime-bg);color:var(--green-text)}
+.tag.navy{background:var(--ai-bg);color:var(--navy)}
+.cite{font-family:var(--font-mono);font-size:12px;color:var(--green-text)}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:grid;gap:4px;box-shadow:var(--shadow)}
+.kpi span{font-size:12.5px;color:var(--text-sub);display:flex;align-items:center;gap:6px}
+.kpi b{font-family:var(--font-brand);font-size:28px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi i{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+/* 차트 */
+.donut-wrap{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.donut-wrap svg{width:150px;height:150px;flex:none}
+.legend{display:grid;gap:7px;font-size:13px;min-width:0}
+.legend div{display:flex;align-items:center;gap:8px}
+.legend i{width:10px;height:10px;border-radius:3px;flex:none}
+.legend b{margin-left:auto;font-variant-numeric:tabular-nums;padding-left:12px}
+.bars{display:grid;gap:9px}
+.bar-row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;align-items:center;font-size:13px}
+.bar-track{display:flex;height:14px;border-radius:5px;overflow:hidden;background:var(--s-na-bg)}
+.bar-track span{display:block;height:100%}
+
+/* 업로드 */
+.drop{border:1.5px dashed #B9C6DA;border-radius:14px;background:#FAFBFD;padding:28px 16px;text-align:center;display:grid;gap:8px;justify-items:center;transition:background .15s,border-color .15s}
+.drop.over{background:var(--ai-bg);border-color:var(--navy)}
+.drop svg{width:34px;height:34px;fill:none;stroke:var(--navy);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.drop b{font-size:15px}
+.file-list{display:grid;gap:6px}
+.file-item{display:flex;align-items:center;gap:10px;font-size:13px;border:1px solid var(--border);border-radius:10px;padding:8px 12px;background:var(--surface)}
+.file-item .name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-item .state{margin-left:auto;font-size:12px;white-space:nowrap}
+
+/* SOP 상세 */
+.meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.meta div{background:#F8FAFC;border:1px solid var(--border);border-radius:10px;padding:9px 12px}
+.meta span{display:block;font-size:11.5px;color:var(--text-sub)}
+.meta b{font-size:14px}
+.sections{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.sec{border:1px solid var(--border);border-radius:10px;padding:11px 13px;font-size:13.5px}
+.sec h4{font-size:12.5px;color:var(--navy);margin-bottom:4px}
+.sec.none{color:var(--text-sub);background:#FAFBFD}
+.raw{white-space:pre-wrap;font-size:13px;line-height:1.7;background:#FAFBFD;border:1px solid var(--border);border-radius:10px;padding:12px 14px;max-height:340px;overflow:auto}
+.raw mark{background:#FFE9A8;border-radius:3px;padding:0 2px}
+.raw mark.flash{animation:flash 1.4s ease}
+@keyframes flash{0%{background:#FFC94D}100%{background:#FFE9A8}}
+.timeline{display:grid;gap:0;font-size:13px}
+.timeline div{display:grid;grid-template-columns:70px 96px minmax(0,1fr);gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.timeline div:last-child{border-bottom:0}
+
+/* 비교 */
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:500;color:var(--text-sub)}
+.filters button[aria-pressed="true"]{background:var(--ai-bg);border-color:#BCCDE6;color:var(--navy);font-weight:600}
+.side-by-side{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.pane{border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.pane h4{font-size:12.5px;padding:9px 13px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.pane.sop h4{background:var(--user-bg)}
+.pane.kp h4{background:var(--lime-bg);color:var(--green-text)}
+.pane .body{padding:12px 13px;font-size:14px;line-height:1.7;min-height:64px}
+.num-ok{background:var(--s-match-bg);color:var(--s-match);font-weight:700;border-radius:4px;padding:0 3px}
+.num-diff{background:var(--s-diff-bg);color:var(--s-diff);font-weight:700;border-radius:4px;padding:0 3px;text-decoration:underline wavy;text-underline-offset:3px}
+.evidence{background:var(--lime-bg);border:1px solid #DCEBC0;border-radius:12px;padding:12px 14px;font-size:13px;display:grid;gap:5px}
+.evidence.none{background:var(--s-na-bg);border-color:var(--border);color:var(--text-sub)}
+.detail-status{border-radius:12px;padding:12px 14px;font-size:13.5px;display:flex;gap:10px;align-items:flex-start}
+.detail-status.match{background:var(--s-match-bg)}.detail-status.diff{background:var(--s-diff-bg)}.detail-status.miss{background:var(--s-miss-bg)}.detail-status.review{background:var(--s-review-bg)}.detail-status.na{background:var(--s-na-bg)}
+.steps{display:grid;gap:8px;font-size:13.5px}
+.steps div{display:flex;gap:10px;align-items:center;color:var(--text-sub)}
+.steps div::before{content:"";width:16px;height:16px;border-radius:50%;border:2px solid var(--border);flex:none}
+.steps div.on{color:var(--text)}
+.steps div.on::before{border-color:var(--navy);border-top-color:transparent;animation:spin .8s linear infinite}
+.steps div.done{color:var(--text)}
+.steps div.done::before{background:var(--green);border-color:var(--green)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.check-list{display:grid;gap:8px}
+.check-item{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13.5px}
+.check-item input{margin-top:4px;accent-color:var(--navy)}
+
+/* 알림 */
+.alert-card{border:1px solid var(--border);border-radius:14px;background:var(--surface);overflow:hidden;box-shadow:var(--shadow)}
+.alert-card.unread{border-color:#B9C8DE}
+.alert-head{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#F8FAFC;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.alert-head b{font-size:13px}
+.alert-body{padding:14px 16px;display:grid;gap:12px}
+.kv{display:grid;grid-template-columns:96px minmax(0,1fr);gap:6px 12px;font-size:13.5px}
+.kv dt{color:var(--text-sub)}
+.kv dd{margin:0}
+.before-after{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.before-after div{border-radius:10px;padding:10px 12px;font-size:13px;border:1px solid var(--border)}
+.before-after div:first-child{background:var(--user-bg)}
+.before-after div:last-child{background:var(--lime-bg)}
+.before-after span{display:block;font-size:11.5px;font-weight:700;color:var(--text-sub);margin-bottom:2px}
+.flow{display:flex;gap:4px;flex-wrap:wrap}
+.flow span{font-size:11.5px;padding:3px 9px;border-radius:999px;background:var(--s-na-bg);color:var(--text-sub)}
+.flow span.on{background:var(--navy);color:#fff}
+.flow span.past{background:var(--ai-bg);color:var(--navy)}
+
+/* 보고서 */
+.report{display:grid;gap:18px}
+.report section{display:grid;gap:8px}
+.report h3{font-size:15px;color:var(--navy);display:flex;gap:8px;align-items:baseline}
+.report h3 span{font-family:var(--font-mono);font-size:12px;color:var(--text-sub)}
+.report-cover{display:flex;justify-content:space-between;gap:16px;border-bottom:2px solid var(--navy);padding-bottom:14px;flex-wrap:wrap}
+.sign{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.sign div{border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;min-height:68px}
+.sign span{display:block;font-size:11.5px;color:var(--text-sub)}
+
+.back-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.back-bar .btn{border-color:#BCCDE6;color:var(--navy)}
+table.stats .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.stats tr.total td{background:#F8FAFC}
+table.stats tr.muted td{color:var(--text-sub)}
+.cell{display:inline-block;min-width:24px;text-align:center;font-weight:700;border-radius:6px;padding:0 6px}
+.cell.match{background:var(--s-match-bg);color:var(--s-match)}.cell.diff{background:var(--s-diff-bg);color:var(--s-diff)}.cell.miss{background:var(--s-miss-bg);color:var(--s-miss)}.cell.review{background:var(--s-review-bg);color:var(--s-review)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--text);color:#fff;padding:10px 16px;border-radius:10px;font-size:13.5px;z-index:100;box-shadow:0 8px 24px rgba(17,29,51,.2);max-width:calc(100% - 32px)}
+.scrim{display:none}
+
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.g-main{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{position:fixed;left:0;top:0;bottom:0;width:260px;z-index:60;transform:translateX(-100%);transition:transform .2s;box-shadow:0 0 40px rgba(17,29,51,.18)}
+  .side.open{transform:none}
+  .scrim.open{display:block;position:fixed;inset:0;background:rgba(17,29,51,.3);z-index:50}
+  .menu-toggle{display:grid}
+  .top{padding:12px 16px}
+  .view{padding:18px 16px 40px}
+  .g2,.g3,.side-by-side,.before-after,.sections{grid-template-columns:minmax(0,1fr)}
+  .meta{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .top .chip.link,.user-chip .nm{display:none}
+}
+@media (max-width:560px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.bar-row{grid-template-columns:minmax(0,1fr)}.sign{grid-template-columns:minmax(0,1fr)}.top .status-chip{display:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media print{
+  body{background:#fff}
+  .side,.top,.no-print,.scrim,.toast{display:none!important}
+  .app{display:block}
+  .view{padding:0;max-width:none}
+  .card{box-shadow:none;border:0;padding:0}
+  .report section{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="sym" viewBox="0 0 64 56">
+      <path fill="#003F98" d="M13 37 L8 53 L26 41 Z"/>
+      <path fill="#003F98" d="M18 13 H31 V43 H18 A15 15 0 0 1 18 13 Z"/>
+      <path fill="#8DC31E" d="M33 13 H46 A15 15 0 0 1 46 43 H33 Z"/>
+      <rect fill="#FFFFFF" x="11" y="21" width="15" height="2.8" rx="1.4"/>
+      <rect fill="#FFFFFF" x="9" y="26.6" width="18" height="2.8" rx="1.4"/>
+      <rect fill="#FFFFFF" x="11" y="32.2" width="11" height="2.8" rx="1.4"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="app">
+  <aside class="side" id="side" aria-label="주 메뉴">
+    <a class="logo" href="#dashboard" aria-label="SOPIA 대시보드">
+      <svg viewBox="0 0 64 56" aria-hidden="true"><use href="#sym"/></svg>
+      <span><span class="word"><b>SOP</b><i>IA</i></span><small>Pharma SOP Intelligence</small></span>
+    </a>
+    <nav class="menu" id="menu"></nav>
+    <div class="side-foot">
+      <span>시연용 시제품 · 데이터는 이 브라우저에만 저장됩니다.</span>
+      <a href="./#compare">← 시험법 문단 비교로</a>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+  <div class="main">
+    <header class="top">
+      <button class="icon-btn menu-toggle" id="menuToggle" aria-label="메뉴 열기"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <div><div class="crumb" id="crumb"></div><h1 id="pageTitle">대시보드</h1></div>
+      <div class="top-right">
+        <span class="chip status-chip" title="식약처 공식 데이터 실시간 연동은 아직 구현되지 않았습니다"><span class="dot"></span>식약처 연동 준비 상태</span>
+        <a class="chip link" href="./">SOPIA 대화</a>
+        <button class="icon-btn" id="bell" aria-label="KP 개정사항 알림"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="badge" id="bellBadge" hidden></span></button>
+        <span class="user-chip" id="userChip"></span>
+      </div>
+    </header>
+    <main class="view" id="view" tabindex="-1"></main>
+  </div>
+</div>
+<input type="file" id="fileInput" multiple accept=".pdf,.docx,.xlsx,.txt,.md,.csv" hidden>
+
+<script>
+'use strict';
+/* =========================================================
+   1. KP 기준 데이터 (시연용 샘플)
+   - KP 제13개정 일반시험법 3종의 요약 발췌. 원문 대조가 필요합니다.
+   ========================================================= */
+const KP_EDITION='대한민국약전 제13개정';
+const KP={
+ ph:{key:'ph',id:'KP13-GT-083',name:'pH 측정법',en:'pH Determination',page:'200~201쪽',section:'83. pH 측정법',
+  purpose:'유리전극을 쓴 pH 측정기로 검액의 pH를 측정합니다.',
+  instruments:['pH 측정기(유리전극·참조전극)','이산화탄소흡수관'],
+  solutions:['표준액 6종: 옥살산염·프탈산염·인산염·붕산염·탄산염·수산화칼슘','조제 예시: pH측정용프탈산수소칼륨을 110 ℃에서 항량 건조한 뒤 10.21 g을 물에 녹여 정확히 1000 mL'],
+  conditions:['장치 재현성: ±0.05 pH 단위(5회 반복)','2종의 pH 표준액으로 교정하고 규정 pH의 ±0.05 pH 단위 이내까지 반복','검액 온도는 교정 표준액 온도와 같게(±2 ℃)'],
+  procedure:['유리전극을 미리 물에 수 시간 이상 담가 둡니다.','인산염 표준액으로 영점 교정합니다.','검액 pH에 가까운 두 번째 표준액으로 감도 교정합니다.','검액에 담가 안정된 값을 읽습니다.'],
+  acceptance:'일반시험법 자체에는 판정기준이 없습니다. 각조·허가사항을 확인하세요.',
+  cautions:['알칼리성 검액은 필요하면 뚜껑 있는 용기 또는 불활성 기체 기류 중 측정합니다.','pH 11 이상 알칼리금속이온 함유 액은 알칼리오차가 적은 전극을 사용합니다.'],
+  match:[/\bpH\b/i,/수소이온/]},
+ dry:{key:'dry',id:'KP13-GT-004',name:'건조감량시험법',en:'Loss on Drying',page:'3쪽',section:'4. 건조감량시험법',
+  purpose:'의약품각조에서 규정하는 조건으로 건조했을 때 소실되는 수분, 결정수의 전부 또는 일부, 휘발성물질 등의 양을 측정합니다.',
+  instruments:['칭량병','건조기','데시케이터','저울'],
+  solutions:['건조제: 의약품각조에서 규정하는 것','가열 건조 후 방치 시 데시케이터용 실리카겔'],
+  conditions:['칭량병 사전 건조: 30분(의약품각조에서 규정하는 방법)','검체 채취량: 규정량의 ±10%','검체 층 높이: 5 mm 이하(따로 규정이 없는 한)','큰 덩어리 분쇄 크기: 지름 2 mm 이하','가열 건조 온도 허용범위: 규정 온도 ±2 ℃','건조 온도·시간: 품목별 각조 규정, 확인 필요'],
+  procedure:['칭량병을 규정 방법으로 30분 건조하고 질량을 정밀하게 답니다.','검체를 규정량 ±10% 범위로 취해 칭량병에 넣고 층 높이 5 mm 이하로 폅니다.','품목별 규정 조건으로 건조합니다(가열 시 규정 온도 ±2 ℃).','가열 건조 후 데시케이터(실리카겔)에서 식힙니다.','건조 후 칭량병 질량을 정밀하게 달아 감량을 구합니다.'],
+  acceptance:'의약품각조 규정에 따릅니다.',
+  cautions:['규정 건조온도보다 낮은 온도에서 융해하는 검체는 융해온도보다 5~10 ℃ 낮은 온도에서 1~2시간 건조한 다음 규정 조건으로 건조합니다.','건조제는 때때로 바꾸어 줍니다.'],
+  match:[/건조\s*감량/,/loss on drying/i]},
+ disintegration:{key:'disintegration',id:'KP13-GT-026-TAB',name:'붕해시험법 — 정제(일반방출제제)',en:'Disintegration Test',page:'53~55쪽',section:'26. 붕해시험법',
+  purpose:'정해진 조건에서 규정시간 안에 제형이 붕해하는지 확인합니다. 유효성분의 완전 용해 여부를 확인하는 시험은 아닙니다.',
+  instruments:['1000 mL 비커','37 ± 2 ℃ 항온조','분당 29~32회 왕복·진폭 53~57 mm 시험기','유리관 6개, 보조판·보조통'],
+  solutions:['제1액: 염화나트륨 2.0 g + 염산 7.0 mL + 물을 넣어 1000 mL(pH 약 1.2)','제2액: 0.2 mol/L 인산이수소칼륨시액 250 mL + 0.2 mol/L 수산화나트륨시액 118 mL + 물을 넣어 1000 mL(pH 약 6.8)'],
+  conditions:['시험액: 물(따로 규정이 없는 한)','온도: 37 ± 2 ℃','일반방출 정제 관찰 시점: 30분(따로 규정이 없는 한)'],
+  procedure:['시험기와 시험액을 준비하고 시험액 온도를 37 ± 2 ℃로 맞춥니다.','정제 6개를 시험기에 넣고 규정 조건에서 시험합니다.','규정 시점에 붕해 여부를 관찰하고 기록합니다.'],
+  acceptance:'모든 검체가 완전히 붕해되면 적합. 1~2개가 붕해되지 않으면 12개를 추가 시험해 총 18개 중 16개 이상 붕해 시 적합.',
+  cautions:['“따로 규정이 없는 한”의 기본 조건입니다. 각조·허가사항에 별도 조건이 있을 수 있습니다.','캡슐제·코팅정제·과립제·장용성제제 등은 제형별 조건이 다릅니다.'],
+  match:[/붕해/,/disintegration/i]}
+};
+
+/* 비교 항목 10종 */
+const ITEMS=[
+ {k:'procedure',n:'시험방법 및 절차',en:'Procedure'},
+ {k:'reagents',n:'시약 및 시액',en:'Reagents'},
+ {k:'equipment',n:'시험장비 및 기구',en:'Equipment'},
+ {k:'tempTime',n:'시험 온도 및 시간',en:'Temperature & Time'},
+ {k:'sampleAmt',n:'검체량 및 시험량',en:'Sample Amount'},
+ {k:'replicates',n:'시험횟수 및 반복 측정',en:'Replicates'},
+ {k:'calculation',n:'계산식 및 결과 산출',en:'Calculation'},
+ {k:'acceptance',n:'허용기준 및 판정기준',en:'Acceptance Criteria'},
+ {k:'pretreatment',n:'시험 전처리',en:'Pretreatment'},
+ {k:'records',n:'결과 기록 및 검토',en:'Records & Review'}
+];
+
+/* KP 요구사항 규칙 (mode: value=수치 대조, presence=존재 확인, context=적용 조건 검토) */
+const RULES={
+ ph:[
+  {item:'procedure',label:'영점 교정',kp:'인산염 표준액으로 영점 교정합니다.',kw:['영점'],mode:'presence'},
+  {item:'procedure',label:'감도 교정',kp:'검액 pH에 가까운 두 번째 표준액으로 감도 교정합니다.',kw:['감도'],mode:'presence'},
+  {item:'reagents',label:'pH 표준액',kp:'표준액 6종: 옥살산염·프탈산염·인산염·붕산염·탄산염·수산화칼슘 중 교정에 2종 사용',kw:['표준액'],mode:'presence'},
+  {item:'equipment',label:'pH 측정기',kp:'pH 측정기(유리전극·참조전극)',kw:['유리전극','pH 측정기','pH meter','pH미터'],mode:'presence'},
+  {item:'equipment',label:'알칼리성 검액 측정 조건',kp:'알칼리성 검액은 필요하면 뚜껑 있는 용기 또는 불활성 기체 기류 중 측정(이산화탄소흡수관)',kw:['이산화탄소','불활성','질소'],mode:'context'},
+  {item:'tempTime',label:'검액 온도',kp:'검액 온도는 교정 표준액 온도와 같게(±2 ℃)',kw:['온도','℃'],mode:'value',vals:[{v:2,u:'℃'}]},
+  {item:'replicates',label:'장치 재현성',kp:'장치 재현성: ±0.05 pH 단위(5회 반복)',kw:['재현성','반복'],mode:'value',vals:[{v:5,u:'회'},{v:0.05,u:'pH'}]},
+  {item:'acceptance',label:'판정기준',kp:'일반시험법 자체에는 판정기준이 없습니다. 각조·허가사항을 확인하세요.',kw:['판정','적합','규격'],mode:'context'},
+  {item:'pretreatment',label:'유리전극 침지',kp:'유리전극을 미리 물에 수 시간 이상 담가 둡니다.',kw:['담가','침지','담근'],mode:'presence'}
+ ],
+ dry:[
+  {item:'procedure',label:'칭량병 사전 건조',kp:'칭량병을 규정 방법으로 30분 건조하고 질량을 정밀하게 답니다.',kw:['칭량병'],mode:'value',vals:[{v:30,u:'분'}]},
+  {item:'procedure',label:'건조 후 냉각',kp:'가열 건조 후 데시케이터(실리카겔)에서 식힙니다.',kw:['식힌','식힘','방랭','냉각'],mode:'presence'},
+  {item:'reagents',label:'건조제',kp:'가열 건조 후 방치 시 데시케이터용 실리카겔, 그 밖의 건조제는 각조 규정',kw:['실리카겔','건조제'],mode:'presence'},
+  {item:'equipment',label:'건조 장비',kp:'칭량병, 건조기, 데시케이터, 저울',kw:['데시케이터'],mode:'presence'},
+  {item:'tempTime',label:'건조 온도 허용범위',kp:'가열 건조 온도 허용범위: 규정 온도 ±2 ℃',kw:['건조 온도','온도'],mode:'value',vals:[{v:2,u:'℃'}]},
+  {item:'tempTime',label:'건조 온도·시간',kp:'건조 온도·시간: 품목별 각조 규정, 확인 필요',kw:['시간'],mode:'context'},
+  {item:'sampleAmt',label:'검체 채취량',kp:'검체 채취량: 규정량의 ±10%',kw:['채취','취한','취하','검체량'],mode:'value',vals:[{v:10,u:'%'}]},
+  {item:'sampleAmt',label:'검체 층 높이',kp:'검체 층 높이: 5 mm 이하(따로 규정이 없는 한)',kw:['층'],mode:'value',vals:[{v:5,u:'mm'}]},
+  {item:'calculation',label:'감량 산출',kp:'건조 후 칭량병 질량을 정밀하게 달아 감량을 구합니다.',kw:['감량'],mode:'presence'},
+  {item:'acceptance',label:'판정기준',kp:'의약품각조 규정에 따릅니다.',kw:['판정','적합','규격'],mode:'context'},
+  {item:'pretreatment',label:'큰 덩어리 분쇄',kp:'큰 덩어리 분쇄 크기: 지름 2 mm 이하',kw:['분쇄','덩어리'],mode:'value',vals:[{v:2,u:'mm'}]}
+ ],
+ disintegration:[
+  {item:'procedure',label:'붕해 관찰·기록',kp:'규정 시점에 붕해 여부를 관찰하고 기록합니다.',kw:['관찰','붕해 여부','붕해되는지'],mode:'presence'},
+  {item:'reagents',label:'시험액',kp:'시험액: 물(따로 규정이 없는 한). 제형별로 제1액·제2액을 쓰는 경우가 있음',kw:['시험액'],mode:'context'},
+  {item:'equipment',label:'왕복 횟수',kp:'분당 29~32회 왕복',kw:['왕복'],mode:'value',vals:[{min:29,max:32,u:'회'}]},
+  {item:'equipment',label:'진폭',kp:'진폭 53~57 mm',kw:['진폭'],mode:'value',vals:[{min:53,max:57,u:'mm'}]},
+  {item:'tempTime',label:'시험액 온도',kp:'온도: 37 ± 2 ℃',kw:['온도','℃'],mode:'value',vals:[{v:37,u:'℃'},{v:2,u:'℃'}]},
+  {item:'tempTime',label:'관찰 시점',kp:'일반방출 정제 관찰 시점: 30분(따로 규정이 없는 한)',kw:['관찰','붕해 시간','붕해시간','분간','분 후','분 동안'],mode:'value',vals:[{v:30,u:'분'}]},
+  {item:'sampleAmt',label:'시험 검체 수',kp:'정제 6개를 시험기에 넣고 규정 조건에서 시험합니다.',kw:['6개','6정','정제'],mode:'value',vals:[{v:6,u:'개'}]},
+  {item:'replicates',label:'추가 시험',kp:'1~2개가 붕해되지 않으면 12개를 추가 시험',kw:['추가 시험','추가시험','12개'],mode:'value',vals:[{v:12,u:'개'}]},
+  {item:'acceptance',label:'재시험 판정',kp:'총 18개 중 16개 이상 붕해 시 적합',kw:['16개','18개'],mode:'presence'}
+ ]
+};
+
+/* =========================================================
+   2. 시연용 샘플 SOP (가상 문서 — 실제 기업 SOP 아님)
+   ========================================================= */
+const SAMPLE_SOPS=[
+{file:'QC-SOP-001_pH측정.txt',history:[['Rev.01','2021-02-01','제정'],['Rev.02','2023-05-10','표준액 종류 추가'],['Rev.03','2025-03-01','장치 재현성 확인 절차 추가']],text:
+`문서번호: QC-SOP-001
+제목: pH 측정 표준작업절차서
+개정번호: Rev.03
+시행일: 2025-03-01
+1. 목적
+본 절차는 원료 및 완제의약품 검액의 pH 측정 방법을 규정한다.
+2. 장비 및 기구
+pH 측정기(유리전극 및 참조전극 일체형), 온도계
+3. 시약 및 시액
+pH 표준액: 프탈산염 표준액, 인산염 표준액, 붕산염 표준액
+4. 시험 전처리
+유리전극은 사용 전 정제수에 2시간 이상 담가 둔다.
+5. 시험방법
+인산염 표준액으로 영점을 교정한다.
+검액의 pH에 가까운 두 번째 표준액으로 감도를 교정한다.
+검액의 온도는 표준액 온도와 ±2 ℃ 이내로 맞춘다.
+장치 재현성은 같은 표준액을 3회 반복 측정하여 ±0.05 pH 단위 이내인지 확인한다.
+6. 판정기준
+측정값이 각 품목의 규격 범위 이내이면 적합으로 판정한다.
+7. 기록 및 검토
+측정 결과는 시험일지에 기록하고 QC 책임자가 검토한다.`},
+{file:'QC-SOP-002_건조감량.txt',history:[['Rev.01','2022-08-01','제정'],['Rev.02','2024-11-15','칭량병 사전 건조 시간 명시']],text:
+`문서번호: QC-SOP-002
+제목: 건조감량 시험 표준작업절차서
+개정번호: Rev.02
+시행일: 2024-11-15
+1. 목적
+본 절차는 의약품의 건조감량 측정 방법을 규정한다.
+2. 장비 및 기구
+칭량병, 건조기, 데시케이터, 분석용 저울
+3. 시약 및 시액
+데시케이터용 실리카겔
+4. 시험 전처리
+큰 덩어리는 지름 3 mm 이하로 분쇄한다.
+5. 시험방법
+칭량병은 미리 30분간 건조하고 무게를 정밀하게 단다.
+검체는 규정량의 ±10% 범위로 취한다.
+검체의 층 높이는 10 mm 이하가 되도록 고르게 편다.
+건조 온도는 규정 온도 ±2 ℃로 유지한다.
+6. 계산
+건조감량(%) = (건조 전 질량 - 건조 후 질량) / 건조 전 질량 × 100
+7. 판정기준
+각 품목 규격에 따른다.
+8. 기록 및 검토
+칭량 원자료를 시험일지에 첨부하고 QC 책임자가 검토한다.`},
+{file:'QC-SOP-003_붕해시험.txt',history:[['Rev.01','2025-06-10','제정']],text:
+`문서번호: QC-SOP-003
+제목: 정제 붕해시험 표준작업절차서
+개정번호: Rev.01
+시행일: 2025-06-10
+1. 목적
+본 절차는 일반방출 정제의 붕해시험 방법을 규정한다.
+2. 장비 및 기구
+붕해시험기(분당 30회 왕복, 진폭 55 mm), 1000 mL 비커, 항온조
+3. 시약 및 시액
+시험액: 정제수
+4. 시험방법
+정제 6개를 시험기의 유리관에 각각 넣는다.
+시험액의 온도는 37 ± 2 ℃로 유지한다.
+시험 시작 15분 후 붕해 여부를 관찰한다.
+5. 판정기준
+6개 모두 붕해되면 적합으로 판정한다.
+6. 기록 및 검토
+관찰 결과를 시험일지에 기록하고 QC 책임자가 검토한다.`}
+];
+
+/* 시연용 개정 시나리오 (식약처 공식 자료로 확인되지 않음) */
+const SAMPLE_ALERTS=[
+ {id:'AL-001',target:'대한민국약전 일반시험법',method:'disintegration',item:'26. 붕해시험법',status:'영향 분석 필요',read:false,
+  title:'제형별 붕해 관찰 시점 기재 방식 변경 (시연 시나리오)',
+  before:'일반방출 정제 관찰 시점: 30분(따로 규정이 없는 한)',after:'제형별 관찰 시점을 표로 분리해 기재 (시연용 가상 문구)',
+  noticeDate:'공식 확인 전',effectiveDate:'공식 확인 전',priority:'high'},
+ {id:'AL-002',target:'대한민국약전 일반시험법',method:'ph',item:'83. pH 측정법',status:'신규 개정',read:false,
+  title:'장치 재현성 확인 기준 문구 정비 (시연 시나리오)',
+  before:'장치 재현성: ±0.05 pH 단위(5회 반복)',after:'재현성 확인 시 사용 표준액 종류를 명시 (시연용 가상 문구)',
+  noticeDate:'공식 확인 전',effectiveDate:'공식 확인 전',priority:'mid'},
+ {id:'AL-003',target:'대한민국약전 일반시험법',method:'dry',item:'4. 건조감량시험법',status:'SOP 검토 필요',read:true,
+  title:'검체 층 높이 관련 주의 문구 추가 (시연 시나리오)',
+  before:'검체 층 높이: 5 mm 이하(따로 규정이 없는 한)',after:'흡습성 검체 취급 주의 문구 추가 (시연용 가상 문구)',
+  noticeDate:'공식 확인 전',effectiveDate:'공식 확인 전',priority:'mid'}
+];
+const ALERT_FLOW=['신규 개정','영향 분석 필요','SOP 검토 필요','검토 진행 중','검토 완료'];
+const USERS=[{id:'u1',name:'김하늘',role:'QC',label:'QC 담당자'},{id:'u2',name:'이서준',role:'QA',label:'QA 승인자'}];
+
+/* =========================================================
+   3. 상태 저장
+   ========================================================= */
+const STORE='sopia-platform-v1';
+let S;
+function freshState(){
+  const st={sops:[],analyses:[],alerts:JSON.parse(JSON.stringify(SAMPLE_ALERTS)),user:'u1',current:null};
+  SAMPLE_SOPS.forEach(s=>{const d=parseSop(s.text,s.file);d.demo=true;d.history=s.history.map(h=>({rev:h[0],date:h[1],note:h[2]}));st.sops.push(d)});
+  return st;
+}
+function load(){try{const raw=localStorage.getItem(STORE);if(raw){S=JSON.parse(raw);return}}catch(e){}S=freshState()}
+function save(){try{localStorage.setItem(STORE,JSON.stringify(S))}catch(e){}}
+
+/* =========================================================
+   4. 유틸
+   ========================================================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=p=>p+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const today=()=>new Date().toISOString().slice(0,10);
+const nowStr=()=>{const d=new Date();return d.toISOString().slice(0,10)+' '+d.toTimeString().slice(0,5)};
+function toast(msg){const t=document.createElement('div');t.className='toast';t.setAttribute('role','status');t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2800)}
+const me=()=>USERS.find(u=>u.id===S.user)||USERS[0];
+const scriptCache={};
+function loadScript(src){if(!scriptCache[src])scriptCache[src]=new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('라이브러리를 불러오지 못했습니다'));document.head.appendChild(s)});return scriptCache[src]}
+const LIB={
+  pdf:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+  pdfWorker:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
+  mammoth:'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js',
+  xlsx:'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+};
+const STATUS={match:{t:'일치',c:'match',color:'#1F7A4D'},diff:{t:'차이',c:'diff',color:'#E0731E'},miss:{t:'누락 의심',c:'miss',color:'#D63B2F'},review:{t:'추가 검토',c:'review',color:'#E5B523'},na:{t:'해당 없음',c:'na',color:'#C3CBD7'}};
+const badge=k=>`<span class="st ${STATUS[k].c}">${STATUS[k].t}</span>`;
+const PRI={high:'높음',mid:'보통',low:'낮음'};
+
+/* =========================================================
+   5. 문서 파싱
+   ========================================================= */
+const UNIT_RE=/((?:[±]?\s*\d+(?:\.\d+)?\s*(?:[~±–-]\s*)?)+)\s*(℃|°C|분|시간|mm|%|회|개|정|pH\s*단위|g|mL)/g;
+function normUnit(u){u=u.replace(/\s+/g,'');if(u==='°C')return'℃';if(u==='정')return'개';if(u==='pH단위')return'pH';return u}
+function numbersIn(text){const out=[];let m;UNIT_RE.lastIndex=0;while((m=UNIT_RE.exec(text))){const nums=(m[1].match(/\d+(?:\.\d+)?/g)||[]).map(Number);out.push({raw:m[0],nums,u:normUnit(m[2])})}return out}
+const SEC_MAP=[
+ ['purpose',/^(목적|적용\s*범위)/],['equipment',/^(장비|기구|시험\s*장비)/],['reagents',/^(시약|시액|시험액)/],
+ ['pretreatment',/^(시험\s*)?전처리/],['procedure',/^(시험\s*)?(방법|절차)/],['conditions',/^(시험\s*)?조건/],
+ ['calculation',/^(계산|결과\s*산출)/],['acceptance',/^(판정|허용\s*기준|기준)/],['records',/^(기록|검토)/]
+];
+const SEC_LABEL={purpose:'시험목적',procedure:'시험방법',reagents:'시약·시액',equipment:'장비·기구',conditions:'시험조건',acceptance:'판정기준',calculation:'계산식',pretreatment:'전처리',records:'기록·검토'};
+function splitSentences(text){return text.split(/\n+|(?<=다\.)\s+|(?<=요\.)\s+/).map(s=>s.trim()).filter(Boolean)}
+function parseSop(text,filename){
+  const lines=text.replace(/\r/g,'').split('\n');
+  const grab=re=>{const m=text.match(re);return m?m[1].trim():''};
+  let docNo=grab(/(?:문서\s*번호|SOP\s*No\.?)\s*[:：]?\s*([A-Z0-9][A-Z0-9\-_.]+)/i)||(text.match(/\b([A-Z]{2,5}-SOP-\d{2,4}|SOP-[A-Z]{2,5}-\d{2,4})\b/)||[])[1]||'';
+  let title=grab(/(?:제\s*목|문서\s*명|Title)\s*[:：]\s*(.+)/i);
+  if(!title){title=(lines.find(l=>l.trim().length>3&&!/[:：]/.test(l))||filename).trim().slice(0,60)}
+  const rev=grab(/(?:개정\s*번호|개정|Rev(?:ision)?\.?)\s*[:：]?\s*((?:Rev\.?\s*)?\d+(?:\.\d+)?)/i);
+  const eff=grab(/(?:시행\s*일(?:자)?|Effective\s*Date)\s*[:：]?\s*(\d{4}[.\-/]\s?\d{1,2}[.\-/]\s?\d{1,2})/i).replace(/[./]\s?/g,'-');
+  const sections={};let cur=null;
+  lines.forEach(line=>{
+    const l=line.trim();if(!l)return;
+    const stripped=l.replace(/^(\d+(?:\.\d+)*[.)]?|[가-힣][.)]|[■▶●-])\s*/,'');
+    const head=stripped.split(/[:：]/)[0].trim();
+    const hit=head.length<=14?SEC_MAP.find(([,re])=>re.test(head)):null;
+    if(hit&&!/^(문서|제목|개정|시행)/.test(stripped)){cur=hit[0];const after=stripped.includes(':')||stripped.includes('：')?stripped.split(/[:：]/).slice(1).join(':').trim():'';if(after)(sections[cur]=sections[cur]||[]).push(after);return}
+    if(cur)(sections[cur]=sections[cur]||[]).push(l);
+  });
+  const nums=numbersIn(text).map(n=>n.raw.trim());
+  const method=detectMethod(title+' '+text.slice(0,600));
+  const rv=rev?(/^rev/i.test(rev)?rev.replace(/rev\.?\s*/i,'Rev.'):'Rev.'+rev.padStart(2,'0')):'';
+  return {id:uid('SOP'),docNo:docNo||('UPLOAD-'+Math.random().toString(36).slice(2,6).toUpperCase()),title,rev:rv||'확인 불가',effective:eff||'확인 불가',
+    file:filename,raw:text,sections,numbers:nums,method,uploadedAt:nowStr(),history:[],demo:false};
+}
+function detectMethod(text){
+  for(const k of ['disintegration','dry','ph']){if(KP[k].match.some(re=>re.test(text)))return k}
+  return null;
+}
+async function extractText(file){
+  const ext=(file.name.split('.').pop()||'').toLowerCase();
+  if(['txt','md','csv'].includes(ext))return await file.text();
+  const buf=await file.arrayBuffer();
+  if(ext==='pdf'){
+    await loadScript(LIB.pdf);pdfjsLib.GlobalWorkerOptions.workerSrc=LIB.pdfWorker;
+    const pdf=await pdfjsLib.getDocument({data:buf}).promise;let out='';
+    for(let p=1;p<=pdf.numPages;p++){const c=await (await pdf.getPage(p)).getTextContent();out+=c.items.map(i=>i.str+(i.hasEOL?'\n':' ')).join('')+'\n'}
+    return out;
+  }
+  if(ext==='docx'){await loadScript(LIB.mammoth);return (await mammoth.extractRawText({arrayBuffer:buf})).value}
+  if(ext==='xlsx'){await loadScript(LIB.xlsx);const wb=XLSX.read(buf,{type:'array'});return wb.SheetNames.map(n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:false,defval:''}).map(r=>r.filter(c=>String(c).trim()).join(' | ')).filter(Boolean).join('\n')).join('\n')}
+  throw new Error('지원하지 않는 형식입니다');
+}
+
+/* =========================================================
+   6. 비교 엔진 (규칙 기반 시연 엔진 — AI 모델 미연동)
+   ========================================================= */
+function valOk(spec,n){return spec.min!=null?(n>=spec.min&&n<=spec.max):Math.abs(n-spec.v)<1e-9}
+function specText(spec){return spec.min!=null?`${spec.min}~${spec.max} ${spec.u}`:`${spec.v} ${spec.u}`}
+function compareSop(sop,kpKey){
+  const kp=KP[kpKey];const rules=RULES[kpKey]||[];
+  const sentences=splitSentences(sop.raw).filter(s=>!/^(문서\s*번호|제\s*목|개정\s*번호|시행\s*일)/.test(s));
+  const rows=[];
+  ITEMS.forEach(it=>{
+    const rs=rules.filter(r=>r.item===it.k);
+    if(!rs.length){rows.push({item:it.k,label:it.n,status:'na',kp:'',sop:'',note:'선택한 KP 시험법에 이 항목의 별도 요구사항이 등록되어 있지 않습니다.',kind:'',evidence:null,priority:'low'});return}
+    rs.forEach(r=>{
+      const hits=sentences.filter(s=>r.kw.some(k=>s.toLowerCase().includes(k.toLowerCase())));
+      const sopText=hits.join(' / ');
+      let status,note,kind='';
+      if(r.mode==='presence'){
+        if(hits.length){status='match';note='SOP에서 해당 요구사항이 확인됩니다.';kind=hits.some(h=>h.replace(/\s/g,'')===r.kp.replace(/\s/g,''))?'':'문구 차이 (조건 동일)'}
+        else{status='miss';note='SOP에서 이 KP 요구사항과 대응하는 문장을 찾지 못했습니다.'}
+      }else if(r.mode==='context'){
+        status='review';note=hits.length?'관련 문장은 있으나 적용 조건(각조·허가사항·검액 특성)에 따라 판단이 필요합니다.':'관련 문장이 없습니다. 이 품목에 해당하는 조건인지 확인이 필요합니다.';
+      }else{
+        if(!hits.length){status='miss';note='SOP에서 이 조건을 다루는 문장을 찾지 못했습니다.'}
+        else{
+          const found=numbersIn(sopText);const parts=[];let diff=false,unknown=false;
+          r.vals.forEach(spec=>{const same=found.filter(f=>f.u===spec.u).flatMap(f=>f.nums);
+            if(!same.length){unknown=true;parts.push(`${specText(spec)}: SOP 수치 확인 불가`);return}
+            const ok=same.some(n=>valOk(spec,n));
+            if(ok)parts.push(`${specText(spec)}: 일치`);else{diff=true;parts.push(`KP ${specText(spec)} ↔ SOP ${same.join(', ')} ${spec.u}`)}});
+          if(diff){status='diff';kind='실제 조건 차이';note=parts.join(' · ')}
+          else if(unknown){status='review';note=parts.join(' · ')}
+          else{status='match';kind='문구 차이 (조건 동일)';note='수치·단위가 KP 기준과 같습니다. 표현 차이는 판정에 반영하지 않았습니다.'}
+        }
+      }
+      rows.push({item:it.k,label:`${it.n} · ${r.label}`,status,kp:r.kp,sop:sopText,note,kind,vals:r.vals||[],
+        evidence:{doc:KP_EDITION,section:kp.section,page:kp.page,code:kp.id,quote:r.kp},
+        priority:status==='miss'||status==='diff'?'high':status==='review'?'mid':'low'});
+    });
+  });
+  return rows;
+}
+function runAnalysis(sopId,kpKey){
+  const sop=S.sops.find(s=>s.id===sopId);
+  const a={id:uid('AN'),sopId,docNo:sop.docNo,title:sop.title,rev:sop.rev,kp:kpKey,date:nowStr(),by:me().name,rows:kpKey?compareSop(sop,kpKey):[],opinion:'',approved:null};
+  if(!kpKey)a.rows=ITEMS.map(it=>({item:it.k,label:it.n,status:'review',kp:'',sop:'',note:'매칭되는 KP 시험법이 등록되어 있지 않아 근거 확인 불가',evidence:null,priority:'mid'}));
+  S.analyses.unshift(a);S.current=a.id;save();return a;
+}
+function counts(rows){const c={match:0,diff:0,miss:0,review:0,na:0};rows.forEach(r=>c[r.status]++);return c}
+function latestPerSop(){const seen=new Set();return S.analyses.filter(a=>{if(seen.has(a.sopId)||!S.sops.some(s=>s.id===a.sopId))return false;seen.add(a.sopId);return true})}
+
+/* =========================================================
+   7. 차트
+   ========================================================= */
+function donut(c){
+  const keys=['match','diff','miss','review','na'];const total=keys.reduce((s,k)=>s+c[k],0)||1;
+  let acc=0;const R=60,C=2*Math.PI*R;
+  const segs=keys.map(k=>{const len=c[k]/total*C;const s=`<circle r="${R}" cx="75" cy="75" fill="none" stroke="${STATUS[k].color}" stroke-width="22" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-acc}" transform="rotate(-90 75 75)"/>`;acc+=len;return c[k]?s:''}).join('');
+  const sum=keys.reduce((s,k)=>s+c[k],0);
+  return `<div class="donut-wrap"><svg viewBox="0 0 150 150" role="img" aria-label="비교 결과 분포"><circle r="${R}" cx="75" cy="75" fill="none" stroke="#EEF1F5" stroke-width="22"/>${segs}<text x="75" y="72" text-anchor="middle" font-family="Outfit" font-size="26" font-weight="600" fill="#111D33">${sum}</text><text x="75" y="92" text-anchor="middle" font-size="11" fill="#59657A">비교 항목</text></svg>
+  <div class="legend">${keys.map(k=>`<div><i style="background:${STATUS[k].color}"></i>${STATUS[k].t}<b>${c[k]}</b></div>`).join('')}</div></div>`;
+}
+function itemBars(rows){
+  return `<div class="bars">${ITEMS.map(it=>{const rs=rows.filter(r=>r.item===it.k);const n=rs.length||1;
+    return `<div class="bar-row"><span>${it.n}</span><div class="bar-track" title="${it.n}">${['match','diff','miss','review','na'].map(k=>{const v=rs.filter(r=>r.status===k).length;return v?`<span style="width:${v/n*100}%;background:${STATUS[k].color}" title="${STATUS[k].t} ${v}"></span>`:''}).join('')}</div></div>`}).join('')}</div>`;
+}
+
+/* =========================================================
+   8. 화면
+   ========================================================= */
+const ICON={
+ dashboard:'<path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-4H4zM14 4v4h6V4z"/>',
+ sops:'<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>',
+ kp:'<circle cx="11" cy="11" r="6"/><path d="m20 20-4.2-4.2"/>',
+ analyze:'<path d="M12 3v4M12 17v4M4.2 7l3.5 2M16.3 15l3.5 2M4.2 17l3.5-2M16.3 9l3.5-2"/><circle cx="12" cy="12" r="3"/>',
+ results:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+ alerts:'<path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15Z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+ report:'<path d="M6 3h12v18H6z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+ settings:'<circle cx="12" cy="12" r="3"/><path d="M19 13.5a7.6 7.6 0 0 0 0-3l1.7-1.3-1.8-3-2 .8a7.4 7.4 0 0 0-2.6-1.5L14 3h-4l-.4 2.5A7.4 7.4 0 0 0 7 7l-2-.8-1.8 3L5 10.5a7.6 7.6 0 0 0 0 3l-1.7 1.3 1.8 3 2-.8a7.4 7.4 0 0 0 2.6 1.5L10 21h4l.4-2.5A7.4 7.4 0 0 0 17 17l2 .8 1.8-3z"/>'
+};
+const ROUTES=[
+ ['dashboard','대시보드','Dashboard'],['sops','SOP 문서 관리','SOP Documents'],['kp','KP 기준 검색','KP Reference'],['analyze','AI 비교 분석','Comparison'],
+ ['results','비교 결과 및 차이점','Results'],['alerts','KP 개정사항 알림','KP Revisions'],['report','분석 보고서','Reports'],['settings','설정 및 사용자 관리','Settings']
+];
+const unreadAlerts=()=>S.alerts.filter(a=>!a.read).length;
+function renderChrome(route){
+  $('#menu').innerHTML=ROUTES.map(([k,n])=>`<a href="#${k}" class="${k===route?'active':''}" ${k===route?'aria-current="page"':''}><svg viewBox="0 0 24 24">${ICON[k]}</svg>${n}${k==='alerts'&&unreadAlerts()?`<span class="count">${unreadAlerts()}</span>`:''}</a>`).join('');
+  const r=ROUTES.find(x=>x[0]===route);$('#pageTitle').textContent=r[1];$('#crumb').textContent=r[2];
+  document.title=`${r[1]} | SOPIA`;
+  const b=$('#bellBadge');const u=unreadAlerts();b.hidden=!u;b.textContent=u;
+  const m=me();$('#userChip').innerHTML=`<span class="av">${m.role}</span><span class="nm">${esc(m.name)} · ${m.label}</span>`;
+  closeMenu();
+}
+function sopName(id){const s=S.sops.find(x=>x.id===id);return s?`${s.docNo} ${s.title}`:'삭제된 SOP'}
+const demoTag='<span class="tag">시연용</span>';
+
+/* --- 대시보드 --- */
+function vDashboard(){
+  const lat=latestPerSop();const rows=lat.flatMap(a=>a.rows);const c=counts(rows);const cmp=rows.filter(r=>r.status!=='na').length;
+  const top=lat.flatMap(a=>a.rows.filter(r=>r.priority==='high').map(r=>({...r,a}))).slice(0,6);
+  const openAlerts=S.alerts.filter(a=>a.status!=='검토 완료');
+  return `
+  <div class="notice"><b>시연 모드</b><span>샘플 SOP와 KP 데이터는 시연용입니다. 비교 엔진은 규칙 기반 시연 버전이며, 식약처 공식 데이터와 실시간 연동되어 있지 않습니다.</span></div>
+  <div class="kpis">
+    <div class="kpi"><span>총 비교 항목</span><b>${cmp}</b></div>
+    <div class="kpi"><span><i style="background:${STATUS.match.color}"></i>일치</span><b>${c.match}</b></div>
+    <div class="kpi"><span><i style="background:${STATUS.diff.color}"></i>차이</span><b>${c.diff}</b></div>
+    <div class="kpi"><span><i style="background:${STATUS.miss.color}"></i>누락 의심</span><b>${c.miss}</b></div>
+    <div class="kpi"><span><i style="background:${STATUS.review.color}"></i>추가 검토</span><b>${c.review}</b></div>
+  </div>
+  ${lat.length?'':`<div class="card empty"><b>아직 분석한 SOP가 없습니다.</b><span>샘플 SOP 3건이 등록되어 있습니다. 바로 비교 분석을 실행해 보세요.</span><button class="btn primary" data-act="runAll">샘플 SOP 전체 분석 실행</button></div>`}
+  <div class="grid g-main">
+    <div class="card"><div class="card-head"><div><h2>검토 우선순위가 높은 항목</h2><p>차이·누락 의심 항목입니다. 누르면 상세 비교로 이동합니다.</p></div></div>
+      ${top.length?`<div class="table-wrap"><table><thead><tr><th>SOP</th><th>항목</th><th>상태</th><th>근거</th></tr></thead><tbody>${top.map((r,i)=>`<tr class="click" data-open="${r.a.id}" data-row="${r.a.rows.indexOf(r.a.rows.find(x=>x.label===r.label))}"><td class="mono">${esc(r.a.docNo)}</td><td>${esc(r.label)}</td><td>${badge(r.status)}</td><td class="cite">${esc(r.evidence.code)} · ${esc(r.evidence.page)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="sub small">우선 검토할 항목이 없습니다.</p>'}
+    </div>
+    <div class="card"><div class="card-head"><div><h2>전체 결과 분포</h2><p>SOP별 최신 분석 ${lat.length}건 기준</p></div></div>${donut(c)}</div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><div class="card-head"><div><h2>분석 결과 요약</h2><p>SOP별 최신 분석</p></div><a class="btn sm" href="#analyze">새 분석</a></div>
+      ${lat.length?`<div class="table-wrap"><table><thead><tr><th>SOP</th><th>KP 기준</th><th>차이</th><th>누락</th><th>검토</th></tr></thead><tbody>${lat.map(a=>{const k=counts(a.rows);return `<tr class="click" data-open="${a.id}"><td><span class="mono">${esc(a.docNo)}</span><br><span class="small sub">${esc(a.title)}</span></td><td class="small">${a.kp?esc(KP[a.kp].name):'매칭 없음'}</td><td>${k.diff}</td><td>${k.miss}</td><td>${k.review}</td></tr>`}).join('')}</tbody></table></div>`:'<p class="sub small">분석 이력이 없습니다.</p>'}
+    </div>
+    <div class="card"><div class="card-head"><div><h2>KP 개정사항</h2><p>조치가 끝나지 않은 알림 ${openAlerts.length}건</p></div><a class="btn sm" href="#alerts">전체 보기</a></div>
+      <div class="check-list">${openAlerts.slice(0,3).map(a=>`<a class="check-item" href="#alerts" style="text-decoration:none;color:inherit"><span>${a.read?'':'<span class="tag navy">새 알림</span> '}<b>${esc(a.item)}</b><br><span class="small sub">${esc(a.title)}</span></span><span class="tag" style="margin-left:auto;white-space:nowrap">${esc(a.status)}</span></a>`).join('')||'<p class="sub small">열린 알림이 없습니다.</p>'}</div>
+    </div>
+  </div>`;
+}
+
+/* --- SOP 문서 관리 --- */
+let uploadLog=[];let sopQuery='';let openSop=null;
+function vSops(){
+  const list=S.sops.filter(s=>!sopQuery||(s.docNo+s.title+s.raw).toLowerCase().includes(sopQuery.toLowerCase()));
+  const sel=S.sops.find(s=>s.id===openSop);
+  return `
+  <div class="card">
+    <div class="card-head"><div><h2>SOP 업로드</h2><p>PDF·DOCX·XLSX(그리고 TXT)를 여러 개 함께 올릴 수 있습니다. 파일은 서버로 보내지 않고 이 브라우저에서만 읽습니다.</p></div></div>
+    <div class="drop" id="drop">
+      <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7 9m5-5 5 5M4 14v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5"/></svg>
+      <b>파일을 여기로 끌어 놓거나</b>
+      <button class="btn primary" data-act="pick">파일 선택</button>
+      <span class="small sub">문서번호·제목·개정번호·시행일과 시험목적·방법·시약·장비·조건·판정기준을 자동으로 나눕니다. 스캔 이미지 PDF는 글자를 읽을 수 없습니다.</span>
+    </div>
+    ${uploadLog.length?`<div class="file-list" style="margin-top:12px">${uploadLog.map(f=>`<div class="file-item"><span class="tag">${esc(f.ext)}</span><span class="name">${esc(f.name)}</span><span class="state" style="color:${f.ok===false?'var(--s-miss)':f.ok?'var(--s-match)':'var(--text-sub)'}">${esc(f.msg)}</span></div>`).join('')}</div>`:''}
+  </div>
+  <div class="card">
+    <div class="card-head"><div><h2>등록된 SOP <span class="sub" style="font-weight:500">${S.sops.length}건</span></h2><p>행을 누르면 자동 추출 결과와 개정 이력을 볼 수 있습니다.</p></div>
+      <div style="min-width:220px;flex:0 1 280px"><input type="search" id="sopSearch" placeholder="문서번호·제목·본문 검색" value="${esc(sopQuery)}" aria-label="SOP 검색"></div></div>
+    <div class="table-wrap"><table><thead><tr><th>문서번호</th><th>제목</th><th>개정</th><th>시행일</th><th>매칭 KP</th><th>등록</th><th></th></tr></thead><tbody>
+    ${list.map(s=>`<tr class="click ${s.id===openSop?'sel':''}" data-sop="${s.id}"><td class="mono">${esc(s.docNo)}</td><td>${esc(s.title)} ${s.demo?demoTag:''}</td><td class="mono">${esc(s.rev)}</td><td class="mono">${esc(s.effective)}</td><td class="small">${s.method?esc(KP[s.method].name):'<span class="sub">자동 매칭 없음</span>'}</td><td class="small sub">${esc(s.uploadedAt)}</td><td><button class="btn sm" data-analyze="${s.id}">분석</button></td></tr>`).join('')||'<tr><td colspan="7" class="sub">검색 결과가 없습니다.</td></tr>'}
+    </tbody></table></div>
+  </div>
+  ${sel?sopDetail(sel):''}`;
+}
+function sopDetail(s){
+  const keys=['purpose','procedure','reagents','equipment','conditions','acceptance','calculation','pretreatment','records'];
+  return `<div class="card" id="sopDetail">
+    <div class="card-head"><div><h2>${esc(s.docNo)} · ${esc(s.title)}</h2><p>${esc(s.file)} ${s.demo?'· 시연용 가상 SOP':''}</p></div>
+      <div class="row"><button class="btn sm primary" data-analyze="${s.id}">이 SOP 비교 분석</button>${s.demo?'':`<button class="btn sm" data-del="${s.id}">삭제</button>`}</div></div>
+    <div class="grid" style="gap:14px">
+      <div class="meta"><div><span>문서번호</span><b class="mono">${esc(s.docNo)}</b></div><div><span>개정번호</span><b class="mono">${esc(s.rev)}</b></div><div><span>시행일</span><b class="mono">${esc(s.effective)}</b></div><div><span>매칭 KP 시험법</span><b>${s.method?esc(KP[s.method].name):'없음'}</b></div></div>
+      <div><h3 style="font-size:14px;margin-bottom:8px">자동 분류 결과</h3><div class="sections">${keys.map(k=>`<div class="sec ${s.sections[k]?'':'none'}"><h4>${SEC_LABEL[k]}</h4>${s.sections[k]?s.sections[k].map(esc).join('<br>'):'추출된 내용 없음'}</div>`).join('')}</div></div>
+      <div class="grid g2">
+        <div><h3 style="font-size:14px;margin-bottom:8px">추출된 수치 데이터 <span class="sub small">${s.numbers.length}개</span></h3>${s.numbers.length?`<div class="table-wrap"><table><thead><tr><th>#</th><th>값·단위</th></tr></thead><tbody>${s.numbers.map((n,i)=>`<tr><td class="sub">${i+1}</td><td class="mono">${esc(n)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="sub small">수치가 없습니다.</p>'}</div>
+        <div><h3 style="font-size:14px;margin-bottom:8px">개정 이력</h3><div class="timeline">${(s.history.length?s.history:[{rev:s.rev,date:s.effective,note:'현재 등록본'}]).map(h=>`<div><b class="mono">${esc(h.rev)}</b><span class="mono sub">${esc(h.date)}</span><span>${esc(h.note)}</span></div>`).join('')}</div></div>
+      </div>
+      <div><h3 style="font-size:14px;margin-bottom:8px">원문</h3><div class="raw" id="rawText">${esc(s.raw)}</div></div>
+    </div></div>`;
+}
+async function handleFiles(files){
+  for(const f of files){
+    const ext=(f.name.split('.').pop()||'').toUpperCase();const entry={name:f.name,ext,msg:'읽는 중…',ok:null};uploadLog.unshift(entry);rerender();
+    try{
+      const text=(await extractText(f)).trim();
+      if(text.length<10)throw new Error('본문 텍스트를 찾지 못했습니다(스캔 이미지일 수 있음)');
+      const d=parseSop(text,f.name);
+      const prev=S.sops.find(s=>s.docNo===d.docNo);
+      if(prev){d.history=[...prev.history.length?prev.history:[{rev:prev.rev,date:prev.effective,note:'이전 등록본'}],{rev:d.rev,date:d.effective,note:`새 버전 업로드 (${f.name})`}];d.id=prev.id;S.sops[S.sops.indexOf(prev)]=d;entry.msg=`기존 ${d.docNo} 개정본으로 갱신`}
+      else{d.history=[{rev:d.rev,date:d.effective,note:`업로드 (${f.name})`}];S.sops.unshift(d);entry.msg=`등록 완료 · ${d.method?KP[d.method].name+' 매칭':'KP 자동 매칭 없음'}`}
+      entry.ok=true;openSop=d.id;save();
+    }catch(e){entry.ok=false;entry.msg='실패: '+e.message}
+    rerender();
+  }
+}
+
+/* --- KP 기준 검색 --- */
+let kpQuery='';
+function vKp(){
+  const q=kpQuery.trim().toLowerCase();
+  const hl=t=>{let s=esc(t);if(q){const re=new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi');s=s.replace(re,m=>`<mark>${m}</mark>`)}return s};
+  const list=Object.values(KP).filter(k=>!q||JSON.stringify(k).toLowerCase().includes(q));
+  return `
+  <div class="card"><div class="card-head"><div><h2>KP 기준 검색 <span class="sub" style="font-weight:500">KP Reference</span></h2><p>${KP_EDITION} 일반시험법 3종의 요약 발췌입니다(시연용 샘플). 실제 적용 전 원문과 대조하세요.</p></div><span class="tag green">${KP_EDITION}</span></div>
+  <input type="search" id="kpSearch" placeholder="예: 37 ℃, 칭량병, 표준액, 재현성" value="${esc(kpQuery)}" aria-label="KP 기준 검색"></div>
+  ${list.map(k=>`<div class="card"><div class="card-head"><div><h2>${hl(k.name)} <span class="sub" style="font-weight:500;font-size:13px">${k.en}</span></h2><p class="cite">${k.id} · ${esc(k.section)} · ${esc(k.page)}</p></div><button class="btn sm" data-kp-analyze="${k.key}">이 기준으로 비교</button></div>
+    <div class="sections">
+      <div class="sec"><h4>목적</h4>${hl(k.purpose)}</div>
+      <div class="sec"><h4>장비·기구</h4>${k.instruments.map(hl).join('<br>')}</div>
+      <div class="sec"><h4>시약·시액</h4>${k.solutions.map(hl).join('<br>')}</div>
+      <div class="sec"><h4>시험조건</h4>${k.conditions.map(hl).join('<br>')}</div>
+      <div class="sec"><h4>시험절차</h4>${k.procedure.map((p,i)=>`${i+1}. ${hl(p)}`).join('<br>')}</div>
+      <div class="sec"><h4>판정기준</h4>${hl(k.acceptance)}</div>
+    </div>
+    <div class="evidence" style="margin-top:10px"><b>주의</b>${k.cautions.map(hl).join('<br>')}</div></div>`).join('')||'<div class="card empty">검색 결과가 없습니다.</div>'}`;
+}
+
+/* --- AI 비교 분석 --- */
+let pickKp={};let running=false;
+function vAnalyze(){
+  return `
+  <div class="notice info"><b>분석 방식</b><span>현재 시제품은 규칙 기반 시연 엔진으로 SOP 문장을 KP 요구사항과 대조합니다. 수치·단위를 비교해 단순 문구 차이와 실제 조건 차이를 구분합니다. 근거가 등록되지 않은 항목은 ‘근거 확인 불가’로 표시합니다.</span></div>
+  <div class="card"><div class="card-head"><div><h2>분석할 SOP 선택</h2><p>SOP 제목과 본문으로 KP 시험법을 자동 매칭합니다. 필요하면 바꿀 수 있습니다.</p></div><a class="btn sm" href="#sops">SOP 업로드</a></div>
+    <div class="check-list">${S.sops.map(s=>`<label class="check-item"><input type="checkbox" name="pick" value="${s.id}" ${s.method?'checked':''}><span style="min-width:0;flex:1"><b class="mono">${esc(s.docNo)}</b> ${esc(s.title)} ${s.demo?demoTag:''}<br><span class="small sub">${esc(s.rev)} · 시행 ${esc(s.effective)}</span></span>
+      <select data-kp-for="${s.id}" style="width:auto;max-width:200px" aria-label="${esc(s.docNo)} 비교 대상 KP">${['',...Object.keys(KP)].map(k=>`<option value="${k}" ${(pickKp[s.id]??s.method??'')===k?'selected':''}>${k?KP[k].name.split(' — ')[0]:'매칭 없음'}</option>`).join('')}</select></label>`).join('')}</div>
+    <div class="row end" style="margin-top:14px"><button class="btn primary" data-act="run" ${running?'disabled':''}>비교 분석 실행</button></div>
+  </div>
+  <div class="card" id="runCard" hidden><div class="card-head"><div><h2>분석 진행</h2></div></div><div class="steps" id="steps"></div></div>`;
+}
+async function doRun(ids){
+  if(!ids.length){toast('분석할 SOP를 하나 이상 선택하세요.');return}
+  running=true;const card=$('#runCard');const steps=['문서 구조와 시험 항목 분류','KP 시험법 매칭','10개 비교 항목 대조','수치·단위 비교로 실제 조건 차이 구분','KP 근거 조항 연결'];
+  let last=null;
+  if(card){card.hidden=false}
+  for(let i=0;i<steps.length;i++){if($('#steps'))$('#steps').innerHTML=steps.map((s,j)=>`<div class="${j<i?'done':j===i?'on':''}">${s}</div>`).join('');await new Promise(r=>setTimeout(r,320))}
+  ids.forEach(id=>{const s=S.sops.find(x=>x.id===id);const kp=pickKp[id]!==undefined?pickKp[id]:s.method;last=runAnalysis(id,kp||null)});
+  running=false;toast(`${ids.length}건 분석을 마쳤습니다.`);selRow=null;location.hash='#results';
+}
+
+/* --- 비교 결과 --- */
+let fStatus='all';let selRow=null;
+/* 비교 통계 결과 표: 상태별 집계 + 비교 항목 10종 × 상태 */
+function statsCard(a){
+  const c=counts(a.rows);const compared=a.rows.filter(r=>r.status!=='na').length;
+  const pct=n=>compared?Math.round(n/compared*1000)/10+'%':'—';
+  const meaning={match:'SOP와 KP 요구사항이 일치',diff:'수치·조건이 서로 다름',miss:'SOP에서 KP 요구사항을 찾지 못함',review:'적용 조건·문맥 확인 필요',na:'KP에 해당 요구사항 없음'};
+  const high=a.rows.filter(r=>r.priority==='high');
+  const keys=['match','diff','miss','review','na'];
+  return `<div class="card"><div class="card-head"><div><h2>비교 통계 결과</h2><p>총 비교 항목 ${compared}개 · 해당 없음 ${c.na}개는 비율 계산에서 뺐습니다.</p></div></div>
+   <div class="grid g2">
+    <div class="table-wrap"><table class="stats"><thead><tr><th>판정</th><th class="num">항목 수</th><th class="num">비율</th><th>의미</th></tr></thead><tbody>
+     ${keys.map(k=>`<tr><td>${badge(k)}</td><td class="num">${c[k]}</td><td class="num">${k==='na'?'—':pct(c[k])}</td><td class="small sub">${meaning[k]}</td></tr>`).join('')}
+     <tr class="total"><td><b>총 비교 항목</b></td><td class="num"><b>${compared}</b></td><td class="num">100%</td><td class="small sub">해당 없음 제외</td></tr>
+    </tbody></table></div>
+    <div class="table-wrap"><table class="stats"><thead><tr><th>비교 항목</th>${keys.slice(0,4).map(k=>`<th class="num">${STATUS[k].t}</th>`).join('')}</tr></thead><tbody>
+     ${ITEMS.map(it=>{const rs=a.rows.filter(r=>r.item===it.k);if(rs.every(r=>r.status==='na'))return `<tr class="muted"><td>${it.n}</td><td class="num" colspan="4">해당 없음</td></tr>`;
+       return `<tr><td>${it.n}</td>${keys.slice(0,4).map(k=>{const n=rs.filter(r=>r.status===k).length;return `<td class="num">${n?`<span class="cell ${STATUS[k].c}">${n}</span>`:'<span class="sub">0</span>'}</td>`}).join('')}</tr>`}).join('')}
+    </tbody></table></div>
+   </div>
+   <div style="margin-top:14px"><h3 style="font-size:13.5px;margin-bottom:8px">검토 우선순위가 높은 항목 <span class="sub" style="font-weight:500">${high.length}건</span></h3>
+    ${high.length?`<div class="table-wrap"><table><thead><tr><th>항목</th><th>상태</th><th>판단 근거</th></tr></thead><tbody>${high.map(r=>`<tr class="click" data-row="${a.rows.indexOf(r)}"><td>${esc(r.label)}</td><td>${badge(r.status)}</td><td class="small">${esc(r.note)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="small sub">차이·누락 의심 항목이 없습니다.</p>'}
+   </div></div>`;
+}
+function vResults(){
+  if(!S.analyses.length)return `<div class="card empty"><b>분석 결과가 없습니다.</b><span>먼저 SOP 비교 분석을 실행하세요.</span><a class="btn primary" href="#analyze">비교 분석으로</a></div>`;
+  const a=S.analyses.find(x=>x.id===S.current)||S.analyses[0];S.current=a.id;
+  const sop=S.sops.find(s=>s.id===a.sopId);const c=counts(a.rows);
+  const rows=a.rows.map((r,i)=>({...r,i})).filter(r=>fStatus==='all'||r.status===fStatus);
+  const sel=selRow!=null?a.rows[selRow]:null;
+  return `
+  ${a.source==='compare'?`<div class="back-bar"><a class="btn" href="./#compare"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>시험법 문단 비교로 돌아가기</a><span class="small sub">시험법 문단 비교 화면에서 입력·첨부한 내용으로 분석했습니다. 돌아가면 입력 내용이 그대로 남아 있습니다.</span></div>`:''}
+  <div class="card"><div class="card-head"><div><h2>${esc(a.docNo)} ↔ ${a.kp?esc(KP[a.kp].name):'매칭 KP 없음'}</h2><p>${esc(a.title)} · ${esc(a.rev)} · 분석 ${esc(a.date)} · ${esc(a.by)}</p></div>
+    <div class="row"><select id="anPick" aria-label="분석 결과 선택" style="width:auto;max-width:min(300px,100%)">${S.analyses.map(x=>`<option value="${x.id}" ${x.id===a.id?'selected':''}>${esc(x.docNo)} · ${esc(x.date)}</option>`).join('')}</select>
+    <button class="btn sm" data-act="xlsx"><svg viewBox="0 0 24 24"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>Excel</button><a class="btn sm" href="#report"><svg viewBox="0 0 24 24"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>PDF 보고서</a></div></div>
+    <div class="grid g2">${donut(c)}<div><h3 style="font-size:13.5px;margin-bottom:10px">항목별 결과</h3>${itemBars(a.rows)}</div></div>
+  </div>
+  ${statsCard(a)}
+  <div class="card"><div class="card-head"><div><h2>항목별 비교표</h2><p>행을 누르면 아래에 SOP·KP 좌우 비교와 근거가 열립니다.</p></div>
+    <div class="filters" role="group" aria-label="상태 필터">${[['all','전체',a.rows.length],...Object.keys(STATUS).map(k=>[k,STATUS[k].t,c[k]])].map(([k,t,n])=>`<button data-filter="${k}" aria-pressed="${fStatus===k}">${t} ${n}</button>`).join('')}</div></div>
+    <div class="table-wrap"><table><thead><tr><th>비교 항목</th><th>SOP 내용</th><th>KP 기준</th><th>상태</th><th>구분</th><th>우선순위</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr class="click ${r.i===selRow?'sel':''}" data-row="${r.i}"><td><b style="font-weight:600">${esc(r.label)}</b></td><td class="small">${r.sop?esc(r.sop):'<span class="sub">해당 문장 없음</span>'}</td><td class="small">${r.kp?esc(r.kp):'<span class="sub">—</span>'}</td><td>${badge(r.status)}</td><td class="small">${esc(r.kind||'')}</td><td><span class="pri ${r.priority}">${PRI[r.priority]}</span></td></tr>`).join('')||'<tr><td colspan="6" class="sub">해당 상태의 항목이 없습니다.</td></tr>'}
+    </tbody></table></div>
+  </div>
+  ${sel?resultDetail(a,sel,sop):''}`;
+}
+function markNums(text,vals,isKp){
+  let s=esc(text);if(!vals||!vals.length)return s;
+  UNIT_RE.lastIndex=0;
+  return s.replace(UNIT_RE,(m,nums,u)=>{const unit=normUnit(u);const specs=vals.filter(v=>v.u===unit);if(!specs.length)return m;
+    if(isKp)return `<span class="num-ok">${m}</span>`;
+    const ns=(nums.match(/\d+(?:\.\d+)?/g)||[]).map(Number);const ok=ns.some(n=>specs.some(sp=>valOk(sp,n)));
+    return `<span class="${ok?'num-ok':'num-diff'}">${m}</span>`});
+}
+function resultDetail(a,r,sop){
+  const ev=r.evidence;
+  return `<div class="card" id="detail"><div class="card-head"><div><h2>${esc(r.label)}</h2><p>SOP 원문과 KP 기준을 나란히 놓고, 다른 수치는 주황 물결 밑줄로 표시했습니다.</p></div>${badge(r.status)}</div>
+   <div class="grid" style="gap:12px">
+    <div class="detail-status ${STATUS[r.status].c}"><b>${STATUS[r.status].t}${r.kind?` · ${esc(r.kind)}`:''}</b><span>${esc(r.note)}</span></div>
+    <div class="side-by-side">
+      <div class="pane sop"><h4><span>회사 SOP · ${esc(a.docNo)} ${esc(a.rev)}</span>${r.sop&&sop?`<button class="btn sm" data-goto="${r.i!=null?r.i:''}" data-sent="${esc(r.sop.split(' / ')[0])}">원문 위치로</button>`:''}</h4><div class="body">${r.sop?markNums(r.sop,r.vals,false):'<span class="sub">SOP에서 대응 문장을 찾지 못했습니다.</span>'}</div></div>
+      <div class="pane kp"><h4><span>${a.kp?esc(KP[a.kp].name):'KP'}</span><span class="mono">${ev?esc(ev.code):''}</span></h4><div class="body">${r.kp?markNums(r.kp,r.vals,true):'<span class="sub">등록된 KP 요구사항 없음</span>'}</div></div>
+    </div>
+    ${ev?`<div class="evidence"><b>근거</b><span>${esc(ev.doc)} · ${esc(ev.section)} · <span class="cite">${esc(ev.page)}</span> · <span class="cite">${esc(ev.code)}</span></span><span>“${esc(ev.quote)}”</span><span class="small sub">시연용 요약 발췌입니다. 원문·개정번호·시행일을 식약처 공식 자료로 대조하세요.</span></div>`
+      :`<div class="evidence none"><b>근거 확인 불가</b><span>이 항목에 연결할 KP 조항이 등록되어 있지 않아 근거를 제시하지 않습니다.</span></div>`}
+   </div></div>`;
+}
+function gotoSource(sent){
+  const s=S.sops.find(x=>x.id===(S.analyses.find(a=>a.id===S.current)||{}).sopId);if(!s)return;
+  openSop=s.id;location.hash='#sops';
+  setTimeout(()=>{const box=$('#rawText');if(!box)return;const idx=s.raw.indexOf(sent);if(idx<0){box.scrollIntoView({block:'center'});return}
+    box.innerHTML=esc(s.raw.slice(0,idx))+'<mark class="flash" id="hit">'+esc(sent)+'</mark>'+esc(s.raw.slice(idx+sent.length));
+    box.scrollIntoView({block:'center'});const h=$('#hit');if(h)box.scrollTop=h.offsetTop-box.offsetTop-60},60);
+}
+async function exportXlsx(a){
+  try{await loadScript(LIB.xlsx)}catch(e){toast('Excel 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하세요.');return}
+  const c=counts(a.rows);
+  const sum=[['보고서','SOPIA SOP-KP 비교 분석 (시연용)'],['SOP',`${a.docNo} ${a.title}`],['SOP 개정',a.rev],['비교 기준',a.kp?`${KP_EDITION} ${KP[a.kp].section} (${KP[a.kp].page})`:'매칭 없음'],['분석 일시',a.date],['분석자',a.by],[],['일치',c.match],['차이',c.diff],['누락 의심',c.miss],['추가 검토',c.review],['해당 없음',c.na],[],['안내','규칙 기반 시연 엔진 결과입니다. 최종 판단과 SOP 변경 승인은 QA 담당자가 합니다.']];
+  const det=a.rows.map(r=>({'비교 항목':r.label,'상태':STATUS[r.status].t,'구분':r.kind||'','우선순위':PRI[r.priority],'SOP 내용':r.sop,'KP 기준':r.kp,'판단 근거':r.note,'근거 조항':r.evidence?`${r.evidence.section} ${r.evidence.page} (${r.evidence.code})`:'근거 확인 불가'}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sum),'요약');
+  const ws=XLSX.utils.json_to_sheet(det);ws['!cols']=[{wch:28},{wch:10},{wch:18},{wch:8},{wch:50},{wch:50},{wch:50},{wch:36}];XLSX.utils.book_append_sheet(wb,ws,'비교결과');
+  XLSX.writeFile(wb,`SOPIA_${a.docNo}_비교결과_${a.date.slice(0,10)}.xlsx`);
+}
+
+/* --- KP 개정사항 알림 --- */
+function vAlerts(){
+  return `
+  <div class="notice"><b>연동 준비 상태</b><span>식약처 대한민국약전 개정 고시 자동 모니터링은 아직 연동되지 않았습니다. 아래 알림은 화면 흐름을 보여 주는 <b>시연용 가상 시나리오</b>이며, 공식 자료로 확인되지 않았으므로 ‘개정 확정’으로 표시하지 않습니다.</span></div>
+  <div class="card"><div class="card-head"><div><h2>모니터링 상태</h2><p>공식 출처 연결 계획</p></div></div>
+    <div class="table-wrap"><table><thead><tr><th>출처</th><th>대상</th><th>상태</th></tr></thead><tbody>
+    <tr><td>식품의약품안전처 고시 (대한민국약전 개정)</td><td>신규 개정 고시, 시행일</td><td><span class="tag">연동 준비</span></td></tr>
+    <tr><td>의약품안전나라 공개 자료</td><td>KP 원문, 개정 전후 비교</td><td><span class="tag">연동 준비</span></td></tr>
+    <tr><td>SOPIA SOP 저장소 (이 브라우저)</td><td>관련 SOP 자동 매칭</td><td><span class="tag green">작동 중</span></td></tr>
+    </tbody></table></div></div>
+  ${S.alerts.map(al=>{const rel=S.sops.filter(s=>s.method===al.method);const idx=ALERT_FLOW.indexOf(al.status);
+    return `<article class="alert-card ${al.read?'':'unread'}" id="${al.id}">
+     <div class="alert-head">${al.read?'':'<span class="tag navy">새 알림</span>'}<b>[KP 개정사항 알림]</b><span class="small sub">${esc(al.title)}</span><span class="tag" style="margin-left:auto">시연용 · 공식 미확인</span></div>
+     <div class="alert-body">
+      <dl class="kv"><dt>개정 대상</dt><dd>${esc(al.target)}</dd><dt>변경 항목</dt><dd>${esc(al.item)}</dd><dt>개정 상태</dt><dd>공식 자료 미확인 — 개정 여부 확인 필요</dd>
+       <dt>관련 SOP</dt><dd>${rel.length?rel.map(s=>`<span class="mono">${esc(s.docNo)}</span>`).join(', '):'<span class="sub">자동 매칭된 SOP 없음</span>'}</dd>
+       <dt>영향도</dt><dd>${rel.length?(al.priority==='high'?'<span class="pri high">높음 · 검토 필요</span>':'<span class="pri mid">보통 · 검토 필요</span>'):'<span class="sub">관련 SOP 없음</span>'}</dd>
+       <dt>권장 조치</dt><dd>기존 SOP와 개정된 KP 원문 비교</dd>
+       <dt>고시일·시행일</dt><dd>${esc(al.noticeDate)} / ${esc(al.effectiveDate)}</dd></dl>
+      <div class="before-after"><div><span>개정 전 (현행 KP 요약)</span>${esc(al.before)}</div><div><span>개정 후 (시연용 가상 문구)</span>${esc(al.after)}</div></div>
+      <div class="flow" aria-label="검토 단계">${ALERT_FLOW.map((f,i)=>`<span class="${i===idx?'on':i<idx?'past':''}">${f}</span>`).join('')}</div>
+      <div class="row end">${al.read?'':`<button class="btn sm" data-read="${al.id}">읽음 표시</button>`}
+       ${rel[0]?`<button class="btn sm" data-alert-analyze="${rel[0].id}">관련 SOP 비교</button>`:''}
+       <label class="small sub" for="st-${al.id}">조치 상태</label><select id="st-${al.id}" data-status="${al.id}" style="width:auto">${ALERT_FLOW.map(f=>`<option ${f===al.status?'selected':''}>${f}</option>`).join('')}</select></div>
+     </div></article>`}).join('')}`;
+}
+
+/* --- 분석 보고서 --- */
+function vReport(){
+  if(!S.analyses.length)return `<div class="card empty"><b>보고서로 만들 분석이 없습니다.</b><a class="btn primary" href="#analyze">비교 분석으로</a></div>`;
+  const a=S.analyses.find(x=>x.id===S.current)||S.analyses[0];const sop=S.sops.find(s=>s.id===a.sopId)||{};const c=counts(a.rows);const kp=a.kp?KP[a.kp]:null;
+  const issues=a.rows.filter(r=>r.status==='diff'||r.status==='miss');const reviews=a.rows.filter(r=>r.status==='review');
+  const isQA=me().role==='QA';
+  return `
+  <div class="card no-print"><div class="row"><label class="field" style="flex:1;min-width:220px">보고서 대상 분석<select id="repPick">${S.analyses.map(x=>`<option value="${x.id}" ${x.id===a.id?'selected':''}>${esc(x.docNo)} · ${esc(x.date)}</option>`).join('')}</select></label>
+   <div class="row" style="align-self:flex-end"><button class="btn" data-act="xlsx">Excel 다운로드</button><button class="btn primary" data-act="print">PDF로 저장</button></div></div>
+   <p class="small sub" style="margin-top:8px">PDF로 저장을 누르면 인쇄 창이 열립니다. 대상 프린터를 ‘PDF로 저장’으로 고르세요.</p></div>
+  <div class="card report" id="report">
+   <div class="report-cover"><div><span class="cite">SOPIA · Pharma SOP Intelligence</span><h2 style="font-size:22px;margin-top:4px">SOP–KP 비교 분석 보고서</h2><p class="sub small">시연용 보고서 · 규칙 기반 시연 엔진 결과</p></div>
+    <div class="small" style="text-align:right">보고서 번호 <span class="mono">${esc(a.id)}</span><br>생성 ${esc(a.date)}</div></div>
+   <section><h3><span>01</span>분석 대상 SOP 정보</h3><dl class="kv"><dt>문서번호</dt><dd class="mono">${esc(a.docNo)}</dd><dt>제목</dt><dd>${esc(a.title)}</dd><dt>개정번호</dt><dd class="mono">${esc(a.rev)}</dd><dt>시행일</dt><dd class="mono">${esc(sop.effective||'')}</dd><dt>파일</dt><dd>${esc(sop.file||'')}${sop.demo?' (시연용 가상 SOP)':''}</dd></dl></section>
+   <section><h3><span>02</span>비교 기준 KP 개정 정보</h3>${kp?`<dl class="kv"><dt>기준</dt><dd>${KP_EDITION}</dd><dt>시험법</dt><dd>${esc(kp.section)} (${esc(kp.name)})</dd><dt>위치</dt><dd class="cite">${esc(kp.page)} · ${esc(kp.id)}</dd><dt>시행일</dt><dd>공식 자료로 확인 필요</dd></dl>`:'<p>매칭되는 KP 시험법이 없어 근거 확인 불가</p>'}</section>
+   <section><h3><span>03</span>비교 분석 개요</h3><p>총 ${a.rows.filter(r=>r.status!=='na').length}개 항목을 비교했습니다. 일치 ${c.match}, 차이 ${c.diff}, 누락 의심 ${c.miss}, 추가 검토 ${c.review}, 해당 없음 ${c.na}입니다. 수치·단위가 같으면 표현이 달라도 ‘일치(문구 차이)’로, 수치가 다르면 ‘차이(실제 조건 차이)’로 분류했습니다.</p>${donut(c)}</section>
+   <section><h3><span>04</span>시험 항목별 비교 결과</h3><div class="table-wrap"><table><thead><tr><th>항목</th><th>상태</th><th>판단 근거</th></tr></thead><tbody>${a.rows.map(r=>`<tr><td>${esc(r.label)}</td><td>${badge(r.status)}</td><td class="small">${esc(r.note)}</td></tr>`).join('')}</tbody></table></div></section>
+   <section><h3><span>05</span>차이점 및 누락 의심 항목</h3>${issues.length?`<div class="table-wrap"><table><thead><tr><th>항목</th><th>SOP</th><th>KP</th><th>상태</th></tr></thead><tbody>${issues.map(r=>`<tr><td>${esc(r.label)}</td><td class="small">${esc(r.sop||'해당 문장 없음')}</td><td class="small">${esc(r.kp)}</td><td>${badge(r.status)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="sub">차이·누락 의심 항목이 없습니다.</p>'}</section>
+   <section><h3><span>06</span>관련 KP 원문 및 근거 위치</h3><div class="table-wrap"><table><thead><tr><th>항목</th><th>KP 요약 발췌</th><th>근거 위치</th></tr></thead><tbody>${a.rows.filter(r=>r.status!=='na').map(r=>`<tr><td>${esc(r.label)}</td><td class="small">${esc(r.kp||'')}</td><td class="cite">${r.evidence?`${esc(r.evidence.section)} · ${esc(r.evidence.page)}`:'근거 확인 불가'}</td></tr>`).join('')}</tbody></table></div><p class="small sub">KP 내용은 시연용 요약 발췌입니다. 원문과 대조가 필요합니다.</p></section>
+   <section><h3><span>07</span>검토 우선순위</h3><ol style="margin:0;padding-left:1.2em;display:grid;gap:4px">${[...issues,...reviews].map(r=>`<li><span class="pri ${r.priority}">[${PRI[r.priority]}]</span> ${esc(r.label)} — ${STATUS[r.status].t}</li>`).join('')||'<li>우선 검토 항목 없음</li>'}</ol></section>
+   <section><h3><span>08</span>AI 개선 제안 <span>규칙 기반 시연</span></h3><ul style="margin:0;padding-left:1.2em;display:grid;gap:4px">${issues.map(r=>`<li>${esc(r.label)}: ${r.status==='diff'?`SOP 조건이 KP 기준(${esc(r.kp)})과 다릅니다. 제품 허가사항·승인 시험방법에 근거한 차이인지 확인하고, 근거가 없으면 SOP 개정을 검토하세요.`:`KP 요구사항(${esc(r.kp)})이 SOP에서 확인되지 않습니다. 해당 품목에 적용되는지 확인한 뒤 SOP 반영 여부를 검토하세요.`}</li>`).join('')||'<li>개선 제안 없음</li>'}${reviews.length?`<li>추가 검토 ${reviews.length}건은 각조·허가사항의 적용 조건을 확인해야 판단할 수 있습니다.</li>`:''}</ul></section>
+   <section><h3><span>09</span>최종 검토 의견</h3>
+    <textarea id="opinion" placeholder="QA 검토 의견을 입력하세요" ${isQA?'':'disabled'} aria-label="최종 검토 의견">${esc(a.opinion)}</textarea>
+    ${isQA?'':'<p class="small sub no-print">최종 검토 의견과 승인은 QA 승인자만 작성할 수 있습니다. 설정에서 사용자를 바꿀 수 있습니다.</p>'}
+    <div class="sign"><div><span>분석</span>${esc(a.by)}<br><span>${esc(a.date)}</span></div><div><span>QA 검토</span>${a.approved?esc(a.approved.by):'—'}</div><div><span>승인 일시</span>${a.approved?esc(a.approved.at):'—'}</div></div>
+    ${isQA?`<div class="row end no-print"><button class="btn" data-act="saveOpinion">의견 저장</button><button class="btn primary" data-act="approve" ${a.approved?'disabled':''}>${a.approved?'승인 완료':'QA 검토 완료 서명'}</button></div>`:''}
+   </section>
+   <p class="small sub">이 보고서는 참고 및 검토 보조 자료입니다. 최종 SOP 변경과 승인 권한은 QA 담당자에게 있습니다.</p>
+  </div>`;
+}
+
+/* --- 설정 --- */
+function vSettings(){
+  return `
+  <div class="grid g2">
+   <div class="card"><div class="card-head"><div><h2>사용자</h2><p>시연용 계정입니다. 역할에 따라 승인 권한이 달라집니다.</p></div></div>
+    <div class="check-list">${USERS.map(u=>`<label class="check-item"><input type="radio" name="user" value="${u.id}" ${u.id===S.user?'checked':''}><span><b>${esc(u.name)}</b> <span class="tag ${u.role==='QA'?'green':'navy'}">${u.label}</span><br><span class="small sub">${u.role==='QA'?'보고서 최종 의견·승인, 개정 알림 검토 완료 처리':'SOP 업로드, 비교 분석, 알림 조치 상태 변경'}</span></span></label>`).join('')}</div></div>
+   <div class="card"><div class="card-head"><div><h2>연동 상태</h2><p>실제 연동 여부를 그대로 표시합니다.</p></div></div>
+    <div class="table-wrap"><table><tbody>
+     <tr><td>비교 분석 엔진</td><td><span class="tag">규칙 기반 시연 엔진</span></td></tr>
+     <tr><td>AI 모델 (LLM)</td><td><span class="tag">연동 준비</span></td></tr>
+     <tr><td>식약처 KP 개정 고시</td><td><span class="tag">연동 준비</span></td></tr>
+     <tr><td>KP 기준 데이터</td><td><span class="tag green">${KP_EDITION} 3종 · 시연용 요약</span></td></tr>
+     <tr><td>문서 저장소</td><td><span class="tag green">이 브라우저(localStorage)</span></td></tr>
+    </tbody></table></div></div>
+  </div>
+  <div class="card"><div class="card-head"><div><h2>데이터 관리</h2><p>업로드한 SOP, 분석 결과, 알림 상태를 지우고 샘플 상태로 되돌립니다.</p></div></div>
+   <div class="row" id="resetRow"><button class="btn" data-act="resetAsk">시연 데이터 초기화</button></div></div>`;
+}
+
+/* =========================================================
+   9. 라우팅과 이벤트
+   ========================================================= */
+const VIEWS={dashboard:vDashboard,sops:vSops,kp:vKp,analyze:vAnalyze,results:vResults,alerts:vAlerts,report:vReport,settings:vSettings};
+function route(){const h=location.hash.slice(1);return VIEWS[h]?h:'dashboard'}
+let lastRoute=null;
+function rerender(){
+  const r=route();renderChrome(r);const v=$('#view');const keep=r===lastRoute?window.scrollY:0;
+  v.innerHTML=VIEWS[r]();
+  if(r!==lastRoute){window.scrollTo(0,0)}else{window.scrollTo(0,keep)}
+  lastRoute=r;
+  if(r==='alerts'){/* 알림 화면을 열면 목록은 그대로 두고 배지만 유지 */}
+}
+function closeMenu(){$('#side').classList.remove('open');$('#scrim').classList.remove('open')}
+window.addEventListener('hashchange',rerender);
+$('#menuToggle').addEventListener('click',()=>{$('#side').classList.add('open');$('#scrim').classList.add('open')});
+$('#scrim').addEventListener('click',closeMenu);
+$('#bell').addEventListener('click',()=>{location.hash='#alerts'});
+$('#fileInput').addEventListener('change',e=>{const f=[...e.target.files];e.target.value='';if(f.length)handleFiles(f)});
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-act],[data-sop],[data-analyze],[data-del],[data-open],[data-row],[data-filter],[data-goto],[data-read],[data-alert-analyze],[data-kp-analyze]');if(!t)return;
+  const d=t.dataset;
+  if(d.analyze){e.stopPropagation();pickKp={};location.hash='#analyze';setTimeout(()=>{document.querySelectorAll('input[name=pick]').forEach(c=>c.checked=c.value===d.analyze)},30);return}
+  if(d.del){e.stopPropagation();const s=S.sops.find(x=>x.id===d.del);if(s){S.sops=S.sops.filter(x=>x.id!==d.del);openSop=null;save();rerender();toast(`${s.docNo}을(를) 목록에서 지웠습니다.`)}return}
+  if(d.sop){openSop=openSop===d.sop?null:d.sop;rerender();if(openSop)setTimeout(()=>$('#sopDetail')?.scrollIntoView({behavior:'smooth',block:'start'}),30);return}
+  if(d.open){S.current=d.open;save();fStatus='all';selRow=d.row!=null&&d.row!==''?Number(d.row):null;location.hash='#results';if(route()==='results')rerender();setTimeout(()=>$('#detail')?.scrollIntoView({block:'start'}),60);return}
+  if(d.row!=null&&route()==='results'){selRow=Number(d.row);rerender();setTimeout(()=>$('#detail')?.scrollIntoView({behavior:'smooth',block:'start'}),30);return}
+  if(d.filter){fStatus=d.filter;rerender();return}
+  if(d.goto!==undefined){gotoSource(d.sent);return}
+  if(d.read){const al=S.alerts.find(x=>x.id===d.read);al.read=true;save();rerender();return}
+  if(d.alertAnalyze){const al=S.alerts.find(x=>S.sops.find(s=>s.id===d.alertAnalyze&&s.method===x.method));if(al){al.read=true;save()}pickKp={};location.hash='#analyze';setTimeout(()=>document.querySelectorAll('input[name=pick]').forEach(c=>c.checked=c.value===d.alertAnalyze),30);return}
+  if(d.kpAnalyze){pickKp={};S.sops.forEach(s=>pickKp[s.id]=s.method===d.kpAnalyze?d.kpAnalyze:(pickKp[s.id]??s.method));location.hash='#analyze';setTimeout(()=>document.querySelectorAll('input[name=pick]').forEach(c=>{const s=S.sops.find(x=>x.id===c.value);c.checked=s.method===d.kpAnalyze}),30);return}
+  const act=d.act;
+  if(act==='pick')$('#fileInput').click();
+  if(act==='run'){const ids=[...document.querySelectorAll('input[name=pick]:checked')].map(c=>c.value);doRun(ids)}
+  if(act==='runAll'){location.hash='#analyze';setTimeout(()=>doRun(S.sops.filter(s=>s.method).map(s=>s.id)),50)}
+  if(act==='xlsx'){const a=S.analyses.find(x=>x.id===S.current)||S.analyses[0];if(a)exportXlsx(a)}
+  if(act==='print')window.print();
+  if(act==='saveOpinion'){const a=S.analyses.find(x=>x.id===S.current);a.opinion=$('#opinion').value;save();toast('검토 의견을 저장했습니다.')}
+  if(act==='approve'){const a=S.analyses.find(x=>x.id===S.current);a.opinion=$('#opinion').value;a.approved={by:me().name+' (QA)',at:nowStr()};save();rerender();toast('QA 검토 완료로 서명했습니다.')}
+  if(act==='resetAsk'){$('#resetRow').innerHTML='<span class="small">업로드한 SOP와 분석 결과가 모두 지워집니다.</span><button class="btn" data-act="resetNo">취소</button><button class="btn primary" data-act="resetYes">초기화</button>'}
+  if(act==='resetNo')rerender();
+  if(act==='resetYes'){S=freshState();save();openSop=null;selRow=null;uploadLog=[];rerender();toast('시연 데이터로 되돌렸습니다.')}
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset.kpFor!==undefined){pickKp[t.dataset.kpFor]=t.value}
+  if(t.id==='anPick'||t.id==='repPick'){S.current=t.value;selRow=null;fStatus='all';save();rerender()}
+  if(t.dataset.status){const al=S.alerts.find(x=>x.id===t.dataset.status);
+    if(t.value==='검토 완료'&&me().role!=='QA'){toast('검토 완료 처리는 QA 승인자만 할 수 있습니다.');t.value=al.status;return}
+    al.status=t.value;al.read=true;save();rerender();toast(`${al.item} 알림을 ‘${al.status}’로 바꿨습니다.`)}
+  if(t.name==='user'){S.user=t.value;save();rerender();toast(`${me().name}(${me().label})로 전환했습니다.`)}
+});
+let qTimer;
+document.addEventListener('input',e=>{
+  if(e.target.id==='sopSearch'||e.target.id==='kpSearch'){const id=e.target.id,val=e.target.value,pos=e.target.selectionStart;if(id==='sopSearch')sopQuery=val;else kpQuery=val;
+    clearTimeout(qTimer);qTimer=setTimeout(()=>{rerender();const el=document.getElementById(id);if(el){el.focus();el.setSelectionRange(pos,pos)}},180)}
+});
+['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{const d=e.target.closest&&e.target.closest('#drop');if(d){e.preventDefault();d.classList.add('over')}}));
+['dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>{const d=e.target.closest&&e.target.closest('#drop');if(d){e.preventDefault();d.classList.remove('over');if(ev==='drop'&&e.dataTransfer.files.length)handleFiles([...e.dataTransfer.files])}}));
+
+/* SOPIA '시험법 문단 비교'에서 넘어온 입력을 받아 바로 분석한다 */
+function takeHandoff(){
+  let h=null;try{h=JSON.parse(localStorage.getItem('sopia-compare-handoff')||'null');localStorage.removeItem('sopia-compare-handoff')}catch(e){}
+  if(!h||!h.text)return;
+  const d=parseSop(h.text,'시험법 문단 비교 입력');
+  if(/^UPLOAD-/.test(d.docNo))d.docNo='INPUT-'+d.docNo.slice(7);
+  if(!/(?:제\s*목|문서\s*명)\s*[:：]/.test(h.text))d.title='시험법 문단 비교 입력';
+  d.file='시험법 문단 비교 화면에서 입력'+(h.files&&h.files.length?` · 첨부 ${h.files.length}건`:'');
+  d.history=[{rev:d.rev,date:today(),note:'시험법 문단 비교 화면에서 입력'}];
+  const kp=KP[h.method]?h.method:d.method;d.method=kp;
+  S.sops.unshift(d);const an=runAnalysis(d.id,kp||null);an.source='compare';save();selRow=null;fStatus='all';
+  if(location.hash!=='#results')history.replaceState(null,'','#results');
+}
+load();takeHandoff();rerender();
+</script>
+</body>
+</html>
