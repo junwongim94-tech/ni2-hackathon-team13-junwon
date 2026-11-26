@@ -263,6 +263,18 @@ table.stats tr.muted td{color:var(--text-sub)}
   .card{box-shadow:none;border:0;padding:0}
   .report section{break-inside:avoid}
 }
+
+/* Back to top */
+.to-top{position:fixed;right:20px;bottom:20px;z-index:40;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:#003F98;color:#fff;display:grid;place-items:center;box-shadow:0 4px 14px rgba(0,63,152,.22),0 1px 3px rgba(17,29,51,.12);opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .2s,transform .2s,visibility .2s,background .15s}
+.to-top.show{opacity:1;visibility:visible;transform:none}
+.to-top:hover{background:#00347D}
+.to-top:focus-visible{outline:2px solid #003F98;outline-offset:3px}
+.to-top svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.to-top::after{content:attr(data-tip);position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);white-space:nowrap;background:#111D33;color:#fff;font-size:12px;line-height:1;padding:7px 10px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .15s}
+.to-top:hover::after,.to-top:focus-visible::after{opacity:1}
+@media(max-width:560px){.to-top{right:14px;bottom:14px}}
+@media(hover:none){.to-top::after{display:none}}
+@media(prefers-reduced-motion:reduce){.to-top{transition:none}}
 </style>
 </head>
 <body>
@@ -306,6 +318,8 @@ table.stats tr.muted td{color:var(--text-sub)}
     <main class="view" id="view" tabindex="-1"></main>
   </div>
 </div>
+<button type="button" class="to-top" id="toTop" aria-label="맨 위로 이동" aria-hidden="true" tabindex="-1" data-tip="맨 위로 이동"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+
 <input type="file" id="fileInput" multiple accept=".pdf,.docx,.xlsx,.txt,.md,.csv" hidden>
 
 <script>
@@ -1040,5 +1054,16 @@ function takeHandoff(){
 }
 load();takeHandoff();rerender();
 </script>
+<script>
+(()=>{
+  const btn=document.getElementById('toTop');
+  const update=()=>{const show=window.scrollY>=300;btn.classList.toggle('show',show);btn.tabIndex=show?0:-1;btn.setAttribute('aria-hidden',show?'false':'true')};
+  window.addEventListener('scroll',update,{passive:true});
+  window.addEventListener('resize',update);
+  btn.addEventListener('click',()=>{window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})});
+  update();
+})();
+</script>
+
 </body>
 </html>
