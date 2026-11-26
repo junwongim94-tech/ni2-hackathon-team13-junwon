@@ -386,9 +386,9 @@ const RULES={
   {item:'procedure',label:'붕해 관찰·기록',kp:'규정 시점에 붕해 여부를 관찰하고 기록합니다.',kw:['관찰','붕해 여부','붕해되는지'],mode:'presence'},
   {item:'reagents',label:'시험액',kp:'시험액: 물(따로 규정이 없는 한). 제형별로 제1액·제2액을 쓰는 경우가 있음',kw:['시험액'],mode:'context'},
   {item:'equipment',label:'왕복 횟수',kp:'분당 29~32회 왕복',kw:['왕복'],mode:'value',vals:[{min:29,max:32,u:'회'}]},
-  {item:'equipment',label:'진폭',kp:'진폭 53~57 mm',kw:['진폭'],mode:'value',vals:[{min:53,max:57,u:'mm'}]},
+  {item:'equipment',label:'진폭',kp:'진폭 53~57 mm',kw:['진폭','이동거리','이동 거리'],mode:'value',vals:[{min:53,max:57,u:'mm'}]},
   {item:'tempTime',label:'시험액 온도',kp:'온도: 37 ± 2 ℃',kw:['온도','℃'],mode:'value',vals:[{v:37,u:'℃'},{v:2,u:'℃'}]},
-  {item:'tempTime',label:'관찰 시점',kp:'일반방출 정제 관찰 시점: 30분(따로 규정이 없는 한)',kw:['관찰','붕해 시간','붕해시간','분간','분 후','분 동안'],mode:'value',vals:[{v:30,u:'분'}]},
+  {item:'tempTime',label:'관찰 시점',kp:'일반방출 정제 관찰 시점: 30분(따로 규정이 없는 한)',kw:['관찰','붕해 시간','붕해시간','시험시간','시험 시간','분간','분 후','분 동안'],mode:'value',vals:[{v:30,u:'분'}]},
   {item:'sampleAmt',label:'시험 검체 수',kp:'정제 6개를 시험기에 넣고 규정 조건에서 시험합니다.',kw:['6개','6정','정제'],mode:'value',vals:[{v:6,u:'개'}]},
   {item:'replicates',label:'추가 시험',kp:'1~2개가 붕해되지 않으면 12개를 추가 시험',kw:['추가 시험','추가시험','12개'],mode:'value',vals:[{v:12,u:'개'}]},
   {item:'acceptance',label:'재시험 판정',kp:'총 18개 중 16개 이상 붕해 시 적합',kw:['16개','18개'],mode:'presence'}
@@ -535,7 +535,7 @@ function splitSentences(text){return text.split(/\n+|(?<=다\.)\s+|(?<=요\.)\s+
 function parseSop(text,filename){
   const lines=text.replace(/\r/g,'').split('\n');
   const grab=re=>{const m=text.match(re);return m?m[1].trim():''};
-  let docNo=grab(/(?:문서\s*번호|SOP\s*No\.?)\s*[:：]?\s*([A-Z0-9][A-Z0-9\-_.]+)/i)||(text.match(/\b([A-Z]{2,5}-SOP-\d{2,4}|SOP-[A-Z]{2,5}-\d{2,4})\b/)||[])[1]||'';
+  let docNo=grab(/(?:문서\s*번호|SOP\s*No\.?)\s*[:：]?\s*([A-Z0-9][A-Z0-9\-_.]+)/i)||(text.match(/\b([A-Z]{2,5}-SOP(?:-[A-Z]{2,8})?-\d{2,4}|SOP-[A-Z]{2,5}-\d{2,4})\b/)||[])[1]||'';
   let title=grab(/(?:제\s*목|문서\s*명|Title)\s*[:：]\s*(.+)/i);
   if(!title){title=(lines.find(l=>l.trim().length>3&&!/[:：]/.test(l))||filename).trim().slice(0,60)}
   const rev=grab(/(?:개정\s*번호|개정|Rev(?:ision)?\.?)\s*[:：]?\s*((?:Rev\.?\s*)?\d+(?:\.\d+)?)/i);
@@ -599,7 +599,7 @@ function compareSop(sop,kpKey){
         if(!hits.length){status='miss';note='SOP에서 이 조건을 다루는 문장을 찾지 못했습니다.'}
         else{
           const found=numbersIn(sopText);const parts=[];let diff=false,unknown=false;
-          r.vals.forEach(spec=>{const same=found.filter(f=>f.u===spec.u).flatMap(f=>f.nums);
+          r.vals.forEach(spec=>{const same=[...new Set(found.filter(f=>f.u===spec.u).flatMap(f=>f.nums))];
             if(!same.length){unknown=true;parts.push(`${specText(spec)}: SOP 수치 확인 불가`);return}
             const ok=same.some(n=>valOk(spec,n));
             if(ok)parts.push(`${specText(spec)}: 일치`);else{diff=true;parts.push(`KP ${specText(spec)} ↔ SOP ${same.join(', ')} ${spec.u}`)}});
@@ -831,7 +831,8 @@ function vResults(){
   const sel=selRow!=null?a.rows[selRow]:null;
   return `
   ${a.source==='compare'?`<div class="back-bar"><a class="btn" href="./#compare"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>시험법 문단 비교로 돌아가기</a><span class="small sub">시험법 문단 비교 화면에서 입력·첨부한 내용으로 분석했습니다. 돌아가면 입력 내용이 그대로 남아 있습니다.</span></div>`:''}
-  <div class="card"><div class="card-head"><div><h2>${esc(a.docNo)} ↔ ${a.kp?esc(KP[a.kp].name):'매칭 KP 없음'}</h2><p>${esc(a.title)} · ${esc(a.rev)} · 분석 ${esc(a.date)} · ${esc(a.by)}</p></div>
+  ${sop&&sop.demo&&a.source==='compare'?`<div class="notice"><b>시연용 가상 문서</b><span>${esc(sop.file)} — 실제 기업 내부 SOP가 아니며, KP와의 차이를 보여 주려고 일부 조건을 의도적으로 바꾼 문서입니다.</span></div>`:''}
+  <div class="card"><div class="card-head"><div><h2>${esc(a.docNo)} ↔ ${a.kp?esc(KP[a.kp].name):'매칭 KP 없음'} ${sop&&sop.demo?demoTag:''}</h2><p>${esc(a.title)} · ${esc(a.rev)} · 분석 ${esc(a.date)} · ${esc(a.by)}</p></div>
     <div class="row"><select id="anPick" aria-label="분석 결과 선택" style="width:auto;max-width:min(300px,100%)">${S.analyses.map(x=>`<option value="${x.id}" ${x.id===a.id?'selected':''}>${esc(x.docNo)} · ${esc(x.date)}</option>`).join('')}</select>
     <button class="btn sm" data-act="xlsx"><svg viewBox="0 0 24 24"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>Excel</button><a class="btn sm" href="#report"><svg viewBox="0 0 24 24"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>PDF 보고서</a></div></div>
     <div class="grid g2">${donut(c)}<div><h3 style="font-size:13.5px;margin-bottom:10px">항목별 결과</h3>${itemBars(a.rows)}</div></div>
@@ -1031,8 +1032,9 @@ function takeHandoff(){
   if(!/(?:제\s*목|문서\s*명)\s*[:：]/.test(h.text))d.title='시험법 문단 비교 입력';
   d.file='시험법 문단 비교 화면에서 입력'+(h.files&&h.files.length?` · 첨부 ${h.files.length}건`:'');
   d.history=[{rev:d.rev,date:today(),note:'시험법 문단 비교 화면에서 입력'}];
+  if(h.demo){d.demo=true;if(h.title)d.title=h.title;d.file=h.fileName||'비교용 문서';d.history=[{rev:d.rev,date:today(),note:'발표 시연용 사전 등록 문서'}]}
   const kp=KP[h.method]?h.method:d.method;d.method=kp;
-  S.sops.unshift(d);const an=runAnalysis(d.id,kp||null);an.source='compare';save();selRow=null;fStatus='all';
+  S.sops.unshift(d);const an=runAnalysis(d.id,kp||null);an.source='compare';an.demo=!!h.demo;save();selRow=null;fStatus='all';
   if(location.hash!=='#results')history.replaceState(null,'','#results');
 }
 load();takeHandoff();rerender();
