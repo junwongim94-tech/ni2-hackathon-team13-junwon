@@ -109,6 +109,9 @@ tr.click:hover td{background:#FAFBFD}
 tr.sel td{background:var(--ai-bg)!important}
 .empty{text-align:center;padding:36px 16px;color:var(--text-sub);display:grid;gap:10px;justify-items:center}
 
+.result-list{display:grid;gap:14px}
+.result-detail{scroll-margin-top:76px}
+
 /* 상태 배지 */
 .st{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px 2px 7px;white-space:nowrap}
 .st::before{font-size:11px;line-height:1}
@@ -251,18 +254,6 @@ table.stats tr.muted td{color:var(--text-sub)}
   .top .chip.link,.user-chip .nm{display:none}
 }
 @media (max-width:560px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.bar-row{grid-template-columns:minmax(0,1fr)}.sign{grid-template-columns:minmax(0,1fr)}.top .status-chip{display:none}}
-/* 맨 위로 이동 버튼 (메인 화면과 같은 모양) */
-.to-top{position:fixed;right:max(20px,env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:40;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,63,152,.22),0 1px 3px rgba(17,29,51,.12);opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .2s,transform .2s,visibility .2s,background .15s}
-.to-top.show{opacity:1;visibility:visible;transform:none}
-.to-top.show.yield{opacity:0;visibility:hidden}
-.to-top:hover{background:var(--navy-hover)}
-.to-top:focus-visible{outline:2px solid var(--navy);outline-offset:3px}
-.to-top svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.to-top::after{content:attr(data-tip);position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);white-space:nowrap;background:var(--text);color:#fff;font-size:12px;line-height:1;padding:7px 10px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .15s}
-.to-top:hover::after,.to-top:focus-visible::after{opacity:1}
-@media (max-width:900px){.to-top{right:max(14px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px))}}
-@media (hover:none){.to-top::after{display:none}}
-@media print{.to-top{display:none!important}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media print{
   body{background:#fff}
@@ -488,7 +479,7 @@ const SAMPLE_ALERTS=[
   title:'장치 재현성 확인 기준 문구 정비 (시연 시나리오)',
   before:'장치 재현성: ±0.05 pH 단위(5회 반복)',after:'재현성 확인 시 사용 표준액 종류를 명시 (시연용 가상 문구)',
   noticeDate:'공식 확인 전',effectiveDate:'공식 확인 전',priority:'mid'},
- {id:'AL-003',target:'대한민국약전 일반시험법',method:'dry',item:'4. 건조감량시험법',status:'SOP 검토 필요',read:true,
+ {id:'AL-003',target:'대한민국약전 일반시험법',method:'dry',item:'4. 건조감량시험법',status:'SOP 검토 필요',read:false,
   title:'검체 층 높이 관련 주의 문구 추가 (시연 시나리오)',
   before:'검체 층 높이: 5 mm 이하(따로 규정이 없는 한)',after:'흡습성 검체 취급 주의 문구 추가 (시연용 가상 문구)',
   noticeDate:'공식 확인 전',effectiveDate:'공식 확인 전',priority:'mid'}
@@ -506,7 +497,7 @@ function freshState(){
   SAMPLE_SOPS.forEach(s=>{const d=parseSop(s.text,s.file);d.demo=true;d.history=s.history.map(h=>({rev:h[0],date:h[1],note:h[2]}));st.sops.push(d)});
   return st;
 }
-function load(){try{const raw=localStorage.getItem(STORE);if(raw){S=JSON.parse(raw);return}}catch(e){}S=freshState()}
+function load(){try{const raw=localStorage.getItem(STORE);if(raw){S=JSON.parse(raw);if(!S._alertBadgeV3){(S.alerts||[]).forEach(a=>a.read=false);S._alertBadgeV3=true;save()}return}}catch(e){}S=freshState();S.alerts.forEach(a=>a.read=false);S._alertBadgeV3=true;save()}
 function save(){try{localStorage.setItem(STORE,JSON.stringify(S))}catch(e){}}
 
 /* =========================================================
@@ -850,10 +841,9 @@ function vResults(){
     <div class="grid g2">${donut(c)}<div><h3 style="font-size:13.5px;margin-bottom:10px">항목별 결과</h3>${itemBars(a.rows)}</div></div>
   </div>
   ${statsCard(a)}
-  <div class="card"><div class="card-head"><div><h2>항목별 비교표</h2><p>항목을 선택하면 원문과 기준, 판단 근거가 바로 아래에 펼쳐집니다. 아래로 스크롤해 다음 항목도 확인하세요.</p></div>
+  <div class="card"><div class="card-head"><div><h2>항목별 상세 비교</h2><p>모든 항목의 SOP·KP 내용과 근거를 펼쳐두었습니다. 아래로 스크롤해 차례로 확인하세요.</p></div>
     <div class="filters" role="group" aria-label="상태 필터">${[['all','전체',a.rows.length],...Object.keys(STATUS).map(k=>[k,STATUS[k].t,c[k]])].map(([k,t,n])=>`<button data-filter="${k}" aria-pressed="${fStatus===k}">${t} ${n}</button>`).join('')}</div></div>
-    <div class="table-wrap"><table><thead><tr><th>비교 항목</th><th>상태</th><th>구분</th><th>우선순위</th></tr></thead><tbody>
-    ${rows.map(r=>`<tr class="click ${r.i===selRow?'sel':''}" data-row="${r.i}"><td><b style="font-weight:600">${esc(r.label)}</b></td><td>${badge(r.status)}</td><td class="small">${esc(r.kind||'')}</td><td><span class="pri ${r.priority}">${PRI[r.priority]}</span></td></tr>${r.i===selRow?`<tr class="detail-row"><td colspan="4">${resultDetail(a,r,sop)}</td></tr>`:''}`).join('')||'<tr><td colspan="4" class="sub">해당 상태의 항목이 없습니다.</td></tr>'}    </tbody></table></div>
+    <div class="result-list">${rows.map(r=>resultDetail(a,r,sop)).join('')||'<div class="card sub">해당 상태의 항목이 없습니다.</div>'}</div>
   </div>
 `;
 }
@@ -867,7 +857,7 @@ function markNums(text,vals,isKp){
 }
 function resultDetail(a,r,sop){
   const ev=r.evidence;
-  return `<div class="card" id="detail"><div class="card-head"><div><h2>${esc(r.label)}</h2><p>SOP 원문과 KP 기준을 나란히 놓고, 다른 수치는 주황 물결 밑줄로 표시했습니다.</p></div>${badge(r.status)}</div>
+  return `<div class="card result-detail" id="detail-${r.i!=null?r.i:'item'}"><div class="card-head"><div><h2>${esc(r.label)}</h2><p>우선순위 ${PRI[r.priority]}</p></div>${badge(r.status)}</div>
    <div class="grid" style="gap:12px">
     <div class="detail-status ${STATUS[r.status].c}"><b>${STATUS[r.status].t}${r.kind?` · ${esc(r.kind)}`:''}</b><span>${esc(r.note)}</span></div>
     <div class="side-by-side">
@@ -998,8 +988,8 @@ document.addEventListener('click',e=>{
   if(d.analyze){e.stopPropagation();pickKp={};location.hash='#analyze';setTimeout(()=>{document.querySelectorAll('input[name=pick]').forEach(c=>c.checked=c.value===d.analyze)},30);return}
   if(d.del){e.stopPropagation();const s=S.sops.find(x=>x.id===d.del);if(s){S.sops=S.sops.filter(x=>x.id!==d.del);openSop=null;save();rerender();toast(`${s.docNo}을(를) 목록에서 지웠습니다.`)}return}
   if(d.sop){openSop=openSop===d.sop?null:d.sop;rerender();if(openSop)setTimeout(()=>$('#sopDetail')?.scrollIntoView({behavior:'smooth',block:'start'}),30);return}
-  if(d.open){S.current=d.open;save();fStatus='all';selRow=d.row!=null&&d.row!==''?Number(d.row):null;location.hash='#results';if(route()==='results')rerender();setTimeout(()=>$('#detail')?.scrollIntoView({block:'start'}),60);return}
-  if(d.row!=null&&route()==='results'){selRow=Number(d.row);rerender();setTimeout(()=>$('#detail')?.scrollIntoView({behavior:'smooth',block:'start'}),30);return}
+  if(d.open){S.current=d.open;save();fStatus='all';const targetRow=d.row!=null&&d.row!==''?Number(d.row):0;location.hash='#results';if(route()==='results')rerender();setTimeout(()=>document.getElementById('detail-'+targetRow)?.scrollIntoView({behavior:'smooth',block:'start'}),60);return}
+  if(d.row!=null&&route()==='results'){const targetRow=Number(d.row);setTimeout(()=>document.getElementById('detail-'+targetRow)?.scrollIntoView({behavior:'smooth',block:'start'}),30);return}
   if(d.filter){fStatus=d.filter;rerender();return}
   if(d.goto!==undefined){gotoSource(d.sent);return}
   if(d.read){const al=S.alerts.find(x=>x.id===d.read);al.read=true;save();rerender();return}
@@ -1049,38 +1039,6 @@ function takeHandoff(){
   if(location.hash!=='#results')history.replaceState(null,'','#results');
 }
 load();takeHandoff();rerender();
-</script>
-<button type="button" class="to-top" id="toTop" aria-label="맨 위로 이동" data-tip="맨 위로 이동"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
-<script id="to-top-js">
-/* 맨 위로 이동: 이 화면은 페이지 전체가 스크롤된다. 표·원문 칸 안쪽 스크롤도 함께 확인한다 */
-(function(){
-  var btn=document.getElementById('toTop');if(!btn)return;
-  var SHOW_AT=300,GAP=12;
-  function page(){return document.scrollingElement||document.documentElement}
-  function innerScrollers(){return [].filter.call(document.querySelectorAll('#view .raw'),function(el){return el.getClientRects().length&&el.scrollHeight>el.clientHeight+1})}
-  function update(){
-    var show=page().scrollTop>=SHOW_AT;
-    btn.classList.toggle('show',show);btn.tabIndex=show?0:-1;btn.setAttribute('aria-hidden',show?'false':'true');
-    if(!show)return;
-    /* 화면 아래쪽 버튼·입력칸과 겹치면 그 위로 올린다 */
-    btn.style.bottom='';btn.classList.remove('yield');
-    var r=btn.getBoundingClientRect(),vh=window.innerHeight,base=vh-r.bottom,boxes=[];
-    document.querySelectorAll('#view .btn, #view button, #view select, #view textarea, #view input, #view .st, .toast').forEach(function(el){
-      if(!el.getClientRects().length)return;var a=el.getBoundingClientRect();
-      if(a.right>r.left-GAP&&a.left<r.right+GAP&&a.bottom>0&&a.top<vh)boxes.push(a)});
-    function free(bottom){var top=vh-bottom-r.height,bot=vh-bottom;return boxes.every(function(a){return !(a.bottom>top-GAP/2&&a.top<bot+GAP/2)})}
-    /* 기본 위치부터 위로 올려 가며 비어 있는 자리를 찾는다. 화면 아래쪽 45% 안에 없으면 잠시 비켜 준다 */
-    var found=null;for(var b=base;b<=vh*0.45;b+=4){if(free(b)){found=b;break}}
-    if(found===null)btn.classList.add('yield');else if(found!==base)btn.style.bottom=found+'px';
-  }
-  var ticking=false;function schedule(){if(!ticking){ticking=true;setTimeout(function(){ticking=false;update()},50)}}
-  window.addEventListener('scroll',schedule,{passive:true});window.addEventListener('resize',schedule);window.addEventListener('hashchange',function(){setTimeout(schedule,60)});
-  btn.addEventListener('click',function(){
-    var smooth=!window.matchMedia('(prefers-reduced-motion: reduce)').matches?'smooth':'auto';
-    window.scrollTo({top:0,behavior:smooth});innerScrollers().forEach(function(el){el.scrollTo({top:0,behavior:smooth})});btn.blur();
-  });
-  update();
-})();
 </script>
 </body>
 </html>
