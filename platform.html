@@ -142,7 +142,9 @@ tr.sel td{background:var(--ai-bg)!important}
 .legend i{width:10px;height:10px;border-radius:3px;flex:none}
 .legend b{margin-left:auto;font-variant-numeric:tabular-nums;padding-left:12px}
 .bars{display:grid;gap:9px}
-.bar-row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;align-items:center;font-size:13px}
+.bar-row{display:grid;grid-template-columns:150px minmax(0,1fr) 64px;gap:10px;align-items:center;font-size:13px}
+.bar-status{font-size:12px;font-weight:600;white-space:nowrap;text-align:left}
+.bar-status.miss{color:var(--s-miss)}.bar-status.diff{color:var(--s-diff)}.bar-status.review{color:var(--s-review)}.bar-status.match{color:var(--s-match)}.bar-status.na{color:var(--s-na)}
 .bar-track{display:flex;height:14px;border-radius:5px;overflow:hidden;background:var(--s-na-bg)}
 .bar-track span{display:block;height:100%}
 
@@ -253,7 +255,7 @@ table.stats tr.muted td{color:var(--text-sub)}
   .meta{grid-template-columns:repeat(2,minmax(0,1fr))}
   .top .chip.link,.user-chip .nm{display:none}
 }
-@media (max-width:560px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.bar-row{grid-template-columns:minmax(0,1fr)}.sign{grid-template-columns:minmax(0,1fr)}.top .status-chip{display:none}}
+@media (max-width:560px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.bar-row{grid-template-columns:minmax(0,1fr) 64px;row-gap:4px}.bar-row>span:first-child{grid-column:1/-1}.sign{grid-template-columns:minmax(0,1fr)}.top .status-chip{display:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media print{
   body{background:#fff}
@@ -690,9 +692,20 @@ function donut(c){
   return `<div class="donut-wrap"><svg viewBox="0 0 150 150" role="img" aria-label="세부 비교 결과 분포"><circle r="${R}" cx="75" cy="75" fill="none" stroke="#EEF1F5" stroke-width="22"/>${segs}<text x="75" y="72" text-anchor="middle" font-family="Outfit" font-size="26" font-weight="600" fill="#111D33">${sum}</text><text x="75" y="92" text-anchor="middle" font-size="11" fill="#59657A">세부 판정</text></svg>
   <div class="legend">${keys.map(k=>`<div><i style="background:${STATUS[k].color}"></i>${STATUS[k].t}<b>${c[k]}</b></div>`).join('')}</div></div>`;
 }
+/* 상위 항목 정렬: 항목에 포함된 세부 판정 중 가장 높은 검토 우선순위 기준(같으면 기존 시험 항목 순서).
+   검토 편의를 위한 표시 순서일 뿐, 품질 위해도나 적합 여부 판단이 아니다. */
+function itemTopStatus(rows,itemKey){
+  const rs=rows.filter(r=>r.item===itemKey);if(!rs.length)return 'na';
+  return rs.reduce((best,r)=>{const i=RESULT_ORDER.indexOf(r.status);return i>=0&&i<RESULT_ORDER.indexOf(best)?r.status:best},'na');
+}
+function orderItems(rows){
+  return ITEMS.map((it,index)=>({it,index,top:itemTopStatus(rows,it.k)}))
+    .sort((a,b)=>RESULT_ORDER.indexOf(a.top)-RESULT_ORDER.indexOf(b.top)||a.index-b.index);
+}
 function itemBars(rows){
-  return `<div class="bars">${ITEMS.map(it=>{const rs=rows.filter(r=>r.item===it.k);const n=rs.length||1;
-    return `<div class="bar-row"><span>${it.n}</span><div class="bar-track" title="${it.n}">${RESULT_ORDER.map(k=>{const v=rs.filter(r=>r.status===k).length;return v?`<span style="width:${v/n*100}%;background:${STATUS[k].color}" title="${STATUS[k].t} ${v}"></span>`:''}).join('')}</div></div>`}).join('')}</div>`;
+  return `<div class="bars">${orderItems(rows).map(({it,top})=>{const rs=rows.filter(r=>r.item===it.k);const n=rs.length||1;
+    const detail=RESULT_ORDER.map(k=>{const v=rs.filter(r=>r.status===k).length;return v?`${STATUS[k].t} ${v}`:''}).filter(Boolean).join(', ');
+    return `<div class="bar-row"><span>${it.n}</span><div class="bar-track" title="${it.n}: ${detail||'해당 없음'}">${RESULT_ORDER.map(k=>{const v=rs.filter(r=>r.status===k).length;return v?`<span style="width:${v/n*100}%;background:${STATUS[k].color}" title="${STATUS[k].t} ${v}"></span>`:''}).join('')}</div><span class="bar-status ${STATUS[top].c}" aria-label="${it.n} 상태: ${detail||'해당 없음'}">${STATUS[top].t}</span></div>`}).join('')}</div>`;
 }
 
 /* =========================================================
@@ -870,7 +883,7 @@ function statsCard(a){
      <tr class="total"><td><b>총 비교 항목</b></td><td class="num"><b>${compared}</b></td><td class="num">100%</td><td class="small sub">해당 없음 제외</td></tr>
     </tbody></table></div>
     <div class="table-wrap"><table class="stats"><thead><tr><th>비교 항목</th>${keys.slice(0,4).map(k=>`<th class="num">${STATUS[k].t}</th>`).join('')}</tr></thead><tbody>
-     ${ITEMS.map(it=>{const rs=a.rows.filter(r=>r.item===it.k);if(rs.every(r=>r.status==='na'))return `<tr class="muted"><td>${it.n}</td><td class="num" colspan="4">해당 없음</td></tr>`;
+     ${orderItems(a.rows).map(({it})=>{const rs=a.rows.filter(r=>r.item===it.k);if(rs.every(r=>r.status==='na'))return `<tr class="muted"><td>${it.n}</td><td class="num" colspan="4">해당 없음</td></tr>`;
        return `<tr><td>${it.n}</td>${keys.slice(0,4).map(k=>{const n=rs.filter(r=>r.status===k).length;return `<td class="num">${n?`<span class="cell ${STATUS[k].c}">${n}</span>`:'<span class="sub">0</span>'}</td>`}).join('')}</tr>`}).join('')}
     </tbody></table></div>
    </div>
@@ -890,7 +903,7 @@ function vResults(){
   <div class="card"><div class="card-head"><div><h2>${esc(a.docNo)} ↔ ${a.kp?esc(KP[a.kp].name):'매칭 KP 없음'} ${sop&&sop.demo?demoTag:''}</h2><p>${esc(a.title)} · ${esc(a.rev)} · 분석 ${esc(a.date)} · ${esc(a.by)}</p>${sop&&sop.attachments&&sop.attachments.length?`<p class="small sub" style="margin-top:3px">첨부 문서 · ${sop.attachments.map(n=>esc(n)).join(', ')} · 추출된 본문은 분석 기록에 보존</p>`:''}</div>
     <div class="row"><select id="anPick" aria-label="분석 결과 선택" style="width:auto;max-width:min(300px,100%)">${S.analyses.map(x=>`<option value="${x.id}" ${x.id===a.id?'selected':''}>${esc(x.docNo)} · ${esc(x.date)}</option>`).join('')}</select>
     <button class="btn sm" data-act="xlsx"><svg viewBox="0 0 24 24"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>Excel</button><a class="btn sm" href="#report"><svg viewBox="0 0 24 24"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>PDF 보고서</a></div></div>
-    <div class="review-priority-summary" aria-label="검토 우선 항목 요약"><p class="review-priority-title">검토 우선 표시 <span>표시 편의를 위한 순서이며 위해도·적합 판정이 아닙니다.</span></p><div class="review-priority-counts">${[['miss','누락 의심'],['diff','차이'],['review','추가 검토']].map(([k,label])=>`<span class="review-priority-count">${badge(k)}<b>${c[k]}</b></span>`).join('')}</div><p class="review-priority-secondary">그 외: 일치 ${c.match}건 · 해당 없음 ${c.na}건</p></div><div class="grid g2"><div><h3 style="font-size:13.5px;margin-bottom:4px">세부 판정 결과 분포</h3><p class="small sub result-chart-note">도넛은 세부 판정 건수(해당 없음 포함)를 표시합니다.</p>${donut(c)}</div><div><h3 style="font-size:13.5px;margin-bottom:4px">상위 항목별 결과</h3><p class="small sub result-chart-note">10개 상위 분류에 속한 세부 판정 건수를 묶어 표시합니다.</p>${itemBars(a.rows)}</div></div>
+    <div class="review-priority-summary" aria-label="검토 우선 항목 요약"><p class="review-priority-title">검토 우선 표시 <span>표시 편의를 위한 순서이며 위해도·적합 판정이 아닙니다.</span></p><div class="review-priority-counts">${[['miss','누락 의심'],['diff','차이'],['review','추가 검토']].map(([k,label])=>`<span class="review-priority-count">${badge(k)}<b>${c[k]}</b></span>`).join('')}</div><p class="review-priority-secondary">그 외: 일치 ${c.match}건 · 해당 없음 ${c.na}건</p></div><div class="grid g2"><div><h3 style="font-size:13.5px;margin-bottom:4px">세부 판정 결과 분포</h3><p class="small sub result-chart-note">도넛은 세부 판정 건수(해당 없음 포함)를 표시합니다.</p>${donut(c)}</div><div><h3 style="font-size:13.5px;margin-bottom:4px">상위 항목별 결과</h3><p class="small sub result-chart-note">10개 상위 분류에 속한 세부 판정 건수를 묶어 표시합니다. 누락 의심 → 차이 → 추가 검토 → 일치 → 해당 없음 순으로 정렬한 검토용 표시 순서입니다.</p>${itemBars(a.rows)}</div></div>
   </div>
   ${statsCard(a)}
   <div class="card"><div class="card-head"><div><h2>항목별 상세 비교</h2><p>모든 항목의 SOP·KP 내용과 근거를 펼쳐두었습니다. 아래로 스크롤해 차례로 확인하세요.</p></div>
@@ -934,6 +947,9 @@ async function exportXlsx(a){
   const det=ordered.map(r=>({'비교 항목':r.label,'상태':STATUS[r.status].t,'구분':r.kind||'','우선순위':PRI[r.priority],'SOP 내용':r.sop,'KP 기준':r.kp,'판단 근거':r.note,'근거 조항':r.evidence?`${r.evidence.section} ${r.evidence.page} (${r.evidence.code})`:'근거 확인 불가'}));
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sum),'요약');
   const ws=XLSX.utils.json_to_sheet(det);ws['!cols']=[{wch:28},{wch:10},{wch:18},{wch:8},{wch:50},{wch:50},{wch:50},{wch:36}];XLSX.utils.book_append_sheet(wb,ws,'비교결과');
+  const items=orderItems(a.rows).map(({it,top})=>{const rs=a.rows.filter(r=>r.item===it.k);const o={'상위 항목':it.n,'대표 상태':STATUS[top].t};RESULT_ORDER.forEach(k=>{o[STATUS[k].t]=rs.filter(r=>r.status===k).length});return o});
+  const wi=XLSX.utils.json_to_sheet(items);wi['!cols']=[{wch:22},{wch:10},{wch:9},{wch:7},{wch:9},{wch:7},{wch:9}];XLSX.utils.book_append_sheet(wb,wi,'상위항목');
+  XLSX.utils.sheet_add_aoa(wb.Sheets['요약'],[[],['표시 순서','누락 의심 → 차이 → 추가 검토 → 일치 → 해당 없음 (검토 편의를 위한 순서이며 품질 위해도·적합 여부 판단이 아님)']],{origin:-1});
   XLSX.writeFile(wb,`SOPIA_${a.docNo}_비교결과_${a.date.slice(0,10)}.xlsx`);
 }
 
