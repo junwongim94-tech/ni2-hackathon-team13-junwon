@@ -55,6 +55,17 @@
 /* 시험법 비교: 샘플 UI 제거 후 버튼을 오른쪽 아래에 나란히 */
 .compare .compare-actions{justify-content:flex-end;flex-wrap:nowrap;margin-top:14px}
 .compare .compare-actions button{white-space:nowrap}
+/* 맨 위로 이동 버튼 */
+.to-top{position:fixed;right:max(20px,env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:40;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:#003F98;color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,63,152,.22),0 1px 3px rgba(17,29,51,.12);opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .2s,transform .2s,visibility .2s,background .15s}
+.to-top.show{opacity:1;visibility:visible;transform:none}
+.to-top:hover{background:#00347D}
+.to-top:focus-visible{outline:2px solid #003F98;outline-offset:3px}
+.to-top svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.to-top::after{content:attr(data-tip);position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);white-space:nowrap;background:#111D33;color:#fff;font-size:12px;line-height:1;padding:7px 10px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .15s}
+.to-top:hover::after,.to-top:focus-visible::after{opacity:1}
+@media(max-width:680px){.to-top{right:max(14px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px))}}
+@media(hover:none){.to-top::after{display:none}}
+@media(prefers-reduced-motion:reduce){.to-top{transition:none}}
 /* 시험법 문단 비교: 비교용 문서 불러오기 */
 button.file-pick{font:inherit;font-size:11px}
 .file-pick+.file-pick{margin-left:6px}
@@ -306,5 +317,62 @@ renderBoardList();
   });
 })();
 </script>
-<script>document.querySelectorAll("a[href=\"${SRC}\"]").forEach(function(a){a.href="https://www.mfds.go.kr/brd/m_207/down.do?brd_id=data0008&seq=15174&data_tp=A&file_seq=11"});</script></body>
+<script>document.querySelectorAll("a[href=\"${SRC}\"]").forEach(function(a){a.href="https://www.mfds.go.kr/brd/m_207/down.do?brd_id=data0008&seq=15174&data_tp=A&file_seq=11"});</script>
+<button type="button" class="to-top" id="toTop" aria-label="맨 위로 이동" data-tip="맨 위로 이동"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+<script id="to-top-js">
+/* 맨 위로 이동: 페이지 스크롤과 대화 기록(#chatLog) 안쪽 스크롤을 모두 확인한다 */
+(function(){
+  var btn=document.getElementById('toTop');if(!btn)return;
+  var SHOW_AT=300,GAP=12;
+  var AVOID='#chatForm, .chat-disclaimer, .compare-actions, #boardPagination, .board-form-actions, .board-detail-actions';
+  function visible(el){return el&&el.getClientRects().length>0&&getComputedStyle(el).visibility!=='hidden'}
+  /* 지금 보이는 패널 안에서 실제로 스크롤되는 영역 */
+  function scrollers(){
+    var list=[document.scrollingElement||document.documentElement];
+    var log=document.getElementById('chatLog');
+    if(visible(log)&&log.scrollHeight>log.clientHeight+1)list.push(log);
+    return list;
+  }
+  function maxTop(){return scrollers().reduce(function(m,el){return Math.max(m,el.scrollTop)},0)}
+  /* 입력창·버튼과 겹치면 그 요소 위로 올린다 */
+  function place(){
+    btn.style.bottom='';
+    var r=btn.getBoundingClientRect(),vh=window.innerHeight,h=r.height;
+    var bottom=vh-r.bottom,boxes=[];
+    document.querySelectorAll(AVOID).forEach(function(el){if(visible(el))boxes.push(el.getBoundingClientRect())});
+    /* 올린 자리에서 다른 요소와 또 겹칠 수 있으므로 겹치지 않을 때까지 다시 확인한다 */
+    for(var i=0;i<6;i++){
+      var top=vh-bottom-h,bot=vh-bottom,moved=false;
+      boxes.forEach(function(a){
+        if(a.right>r.left-GAP&&a.left<r.right+GAP&&a.bottom>top-GAP&&a.top<bot+GAP){var need=vh-a.top+GAP;if(need>bottom){bottom=need;moved=true}}
+      });
+      if(!moved)break;
+    }
+    if(bottom>vh-r.height-GAP)bottom=vh-r.bottom; /* 화면 안에 둘 곳이 없으면 기본 위치 */
+    if(bottom!==vh-r.bottom)btn.style.bottom=bottom+'px';
+  }
+  var ticking=false;
+  function update(){
+    ticking=false;
+    var show=maxTop()>=SHOW_AT;
+    btn.classList.toggle('show',show);btn.tabIndex=show?0:-1;btn.setAttribute('aria-hidden',show?'false':'true');
+    if(show)place();
+  }
+  function schedule(){if(!ticking){ticking=true;requestAnimationFrame(update)}}
+  document.addEventListener('scroll',schedule,true); /* capture: 안쪽 스크롤 영역의 이벤트도 받는다 */
+  window.addEventListener('resize',schedule);
+  document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('[role=tab],.tab'))setTimeout(schedule,50)});
+  btn.addEventListener('click',function(){
+    var smooth=!window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    scrollers().forEach(function(el){
+      if(el.scrollTop<=0)return;
+      if(el===document.scrollingElement||el===document.documentElement)window.scrollTo({top:0,behavior:smooth?'smooth':'auto'});
+      else el.scrollTo({top:0,behavior:smooth?'smooth':'auto'});
+    });
+    btn.blur();
+  });
+  update();
+})();
+</script>
+</body>
  </html>
