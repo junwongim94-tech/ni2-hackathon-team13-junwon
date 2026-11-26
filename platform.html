@@ -287,6 +287,7 @@ table.stats tr.muted td{color:var(--text-sub)}
 </style>
 <style id="sopia-intro-style">
 #sopiaIntro.sopia-intro-overlay{position:fixed;inset:0;z-index:2147483647;overflow:hidden;background:#f4f6fa;color:#111827;visibility:hidden;opacity:0;transition:opacity .35s ease;font-family:"Pretendard","Segoe UI","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+body.sopia-intro-active{overflow:hidden!important;overscroll-behavior:none}
 body.sopia-intro-active #sopiaIntro.sopia-intro-overlay{visibility:visible;opacity:1}
 #sopiaIntro.sopia-intro-overlay.is-closing{visibility:visible;opacity:0;pointer-events:none;transition:opacity .4s ease}
 #sopiaIntroCanvas{position:absolute;inset:0;display:block;width:100%;height:100%;touch-action:none;z-index:1}
@@ -1113,6 +1114,7 @@ let wasSeen=false;try{wasSeen=sessionStorage.getItem('sopia-intro-seen')==='1'}c
 if(wasSeen||window.matchMedia('(prefers-reduced-motion: reduce)').matches){overlay.remove();return}
 try{sessionStorage.setItem('sopia-intro-seen','1')}catch(e){}
 document.body.classList.add('sopia-intro-active');overlay.setAttribute('aria-hidden','false');
+const priorHtmlOverflow=document.documentElement.style.overflow,priorBodyOverflow=document.body.style.overflow;document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden';
 const cv=document.getElementById('sopiaIntroCanvas'),ctx=cv.getContext('2d');
 if(!ctx){overlay.remove();document.body.classList.remove('sopia-intro-active');return}
 const inertElements=[...document.body.children].filter(el=>el!==overlay).map(el=>({el,was:el.inert}));inertElements.forEach(x=>{x.el.inert=true});
@@ -1453,7 +1455,7 @@ cv.addEventListener('pointerup',release);
 cv.addEventListener('pointercancel',release);
 cv.addEventListener('pointerleave',()=>{mouse.inside=false;});
 replayEl.addEventListener('click',reset);
-function hideIntro(){if(!overlay.isConnected)return;overlay.classList.add('is-closing');overlay.setAttribute('aria-hidden','true');document.body.classList.remove('sopia-intro-active','sopia-intro-complete');inertElements.forEach(x=>{x.el.inert=x.was});setTimeout(()=>overlay.remove(),420)}
+function hideIntro(){if(!overlay.isConnected)return;overlay.classList.add('is-closing');overlay.setAttribute('aria-hidden','true');document.body.classList.remove('sopia-intro-active','sopia-intro-complete');document.documentElement.style.overflow=priorHtmlOverflow;document.body.style.overflow=priorBodyOverflow;inertElements.forEach(x=>{x.el.inert=x.was});setTimeout(()=>overlay.remove(),420)}
 let rt; addEventListener('resize',()=>{clearTimeout(rt); rt=setTimeout(setup,150);});
 
 setup();
