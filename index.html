@@ -358,7 +358,7 @@ renderBoardList();
     btn.classList.toggle('show',show);btn.tabIndex=show?0:-1;btn.setAttribute('aria-hidden',show?'false':'true');
     if(show)place();
   }
-  function schedule(){if(!ticking){ticking=true;requestAnimationFrame(update)}}
+  function schedule(){if(!ticking){ticking=true;setTimeout(update,50)}}
   document.addEventListener('scroll',schedule,true); /* capture: 안쪽 스크롤 영역의 이벤트도 받는다 */
   window.addEventListener('resize',schedule);
   document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('[role=tab],.tab'))setTimeout(schedule,50)});

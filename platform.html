@@ -251,6 +251,18 @@ table.stats tr.muted td{color:var(--text-sub)}
   .top .chip.link,.user-chip .nm{display:none}
 }
 @media (max-width:560px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.bar-row{grid-template-columns:minmax(0,1fr)}.sign{grid-template-columns:minmax(0,1fr)}.top .status-chip{display:none}}
+/* 맨 위로 이동 버튼 (메인 화면과 같은 모양) */
+.to-top{position:fixed;right:max(20px,env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:40;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,63,152,.22),0 1px 3px rgba(17,29,51,.12);opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .2s,transform .2s,visibility .2s,background .15s}
+.to-top.show{opacity:1;visibility:visible;transform:none}
+.to-top.show.yield{opacity:0;visibility:hidden}
+.to-top:hover{background:var(--navy-hover)}
+.to-top:focus-visible{outline:2px solid var(--navy);outline-offset:3px}
+.to-top svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.to-top::after{content:attr(data-tip);position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%);white-space:nowrap;background:var(--text);color:#fff;font-size:12px;line-height:1;padding:7px 10px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .15s}
+.to-top:hover::after,.to-top:focus-visible::after{opacity:1}
+@media (max-width:900px){.to-top{right:max(14px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px))}}
+@media (hover:none){.to-top::after{display:none}}
+@media print{.to-top{display:none!important}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media print{
   body{background:#fff}
@@ -1037,6 +1049,38 @@ function takeHandoff(){
   if(location.hash!=='#results')history.replaceState(null,'','#results');
 }
 load();takeHandoff();rerender();
+</script>
+<button type="button" class="to-top" id="toTop" aria-label="맨 위로 이동" data-tip="맨 위로 이동"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+<script id="to-top-js">
+/* 맨 위로 이동: 이 화면은 페이지 전체가 스크롤된다. 표·원문 칸 안쪽 스크롤도 함께 확인한다 */
+(function(){
+  var btn=document.getElementById('toTop');if(!btn)return;
+  var SHOW_AT=300,GAP=12;
+  function page(){return document.scrollingElement||document.documentElement}
+  function innerScrollers(){return [].filter.call(document.querySelectorAll('#view .raw'),function(el){return el.getClientRects().length&&el.scrollHeight>el.clientHeight+1})}
+  function update(){
+    var show=page().scrollTop>=SHOW_AT;
+    btn.classList.toggle('show',show);btn.tabIndex=show?0:-1;btn.setAttribute('aria-hidden',show?'false':'true');
+    if(!show)return;
+    /* 화면 아래쪽 버튼·입력칸과 겹치면 그 위로 올린다 */
+    btn.style.bottom='';btn.classList.remove('yield');
+    var r=btn.getBoundingClientRect(),vh=window.innerHeight,base=vh-r.bottom,boxes=[];
+    document.querySelectorAll('#view .btn, #view button, #view select, #view textarea, #view input, #view .st, .toast').forEach(function(el){
+      if(!el.getClientRects().length)return;var a=el.getBoundingClientRect();
+      if(a.right>r.left-GAP&&a.left<r.right+GAP&&a.bottom>0&&a.top<vh)boxes.push(a)});
+    function free(bottom){var top=vh-bottom-r.height,bot=vh-bottom;return boxes.every(function(a){return !(a.bottom>top-GAP/2&&a.top<bot+GAP/2)})}
+    /* 기본 위치부터 위로 올려 가며 비어 있는 자리를 찾는다. 화면 아래쪽 45% 안에 없으면 잠시 비켜 준다 */
+    var found=null;for(var b=base;b<=vh*0.45;b+=4){if(free(b)){found=b;break}}
+    if(found===null)btn.classList.add('yield');else if(found!==base)btn.style.bottom=found+'px';
+  }
+  var ticking=false;function schedule(){if(!ticking){ticking=true;setTimeout(function(){ticking=false;update()},50)}}
+  window.addEventListener('scroll',schedule,{passive:true});window.addEventListener('resize',schedule);window.addEventListener('hashchange',function(){setTimeout(schedule,60)});
+  btn.addEventListener('click',function(){
+    var smooth=!window.matchMedia('(prefers-reduced-motion: reduce)').matches?'smooth':'auto';
+    window.scrollTo({top:0,behavior:smooth});innerScrollers().forEach(function(el){el.scrollTo({top:0,behavior:smooth})});btn.blur();
+  });
+  update();
+})();
 </script>
 </body>
 </html>
