@@ -64,6 +64,8 @@
 .sidebar-history .history-list{min-height:0}
 .sidebar-history .history-row{min-width:0}
 .sidebar-history .history-item{min-width:0;overflow-wrap:anywhere}
+/* 시험법 메뉴: 휴대폰(680px 이하)에서는 본문 아래에 펼친다 */
+@media(max-width:680px){.workspace.show-sidebar .left-rail{grid-row:3;scroll-margin-top:12px}.workspace .content-column{scroll-margin-top:12px}}
 /* 보조 정보: 920px 이하에서는 본문 레이아웃을 건드리지 않는 오른쪽 Drawer로 연다 */
 .info-scrim,.info-drawer-close{display:none}
 @media(max-width:920px){
@@ -398,6 +400,24 @@ renderBoardList();
 </script>
 <script>document.querySelectorAll("a[href=\"${SRC}\"]").forEach(function(a){a.href="https://www.mfds.go.kr/brd/m_207/down.do?brd_id=data0008&seq=15174&data_tp=A&file_seq=11"});</script>
 <button type="button" class="to-top" id="toTop" aria-label="맨 위로 이동" data-tip="맨 위로 이동"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
+<script id="mobile-menu-below-js">
+/* 휴대폰: 시험법 메뉴는 본문 아래에 열리므로, 열면 메뉴로, 카테고리를 고르면 검색 결과로 화면을 옮긴다.
+   기존 클릭 동작이 끝난 뒤(버블 단계) 위치만 맞춘다. */
+(function(){
+  var mq=window.matchMedia('(max-width: 680px)');
+  var ws=document.querySelector('.workspace'),rail=document.querySelector('.left-rail'),content=document.querySelector('.content-column');
+  if(!ws||!rail||!content)return;
+  var smooth=function(){return window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'};
+  document.addEventListener('click',function(e){
+    if(!mq.matches||!e.target.closest)return;
+    if(e.target.closest('#toggleSidebar')){
+      if(ws.classList.contains('show-sidebar'))setTimeout(function(){rail.scrollIntoView({behavior:smooth(),block:'start'})},30);
+    }else if(e.target.closest('.left-rail [data-q], .left-rail .history-item')){
+      setTimeout(function(){content.scrollIntoView({behavior:smooth(),block:'start'})},30);
+    }
+  });
+})();
+</script>
 <script id="info-drawer-js">
 /* 보조 정보 Drawer (920px 이하). 기존 버튼 동작보다 먼저 받아서, 본문 grid를 바꾸는 show-info 대신 Drawer를 연다 */
 (function(){
