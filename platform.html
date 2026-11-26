@@ -838,13 +838,12 @@ function vResults(){
     <div class="grid g2">${donut(c)}<div><h3 style="font-size:13.5px;margin-bottom:10px">항목별 결과</h3>${itemBars(a.rows)}</div></div>
   </div>
   ${statsCard(a)}
-  <div class="card"><div class="card-head"><div><h2>항목별 비교표</h2><p>행을 누르면 아래에 SOP·KP 좌우 비교와 근거가 열립니다.</p></div>
+  <div class="card"><div class="card-head"><div><h2>항목별 비교표</h2><p>항목을 선택하면 원문과 기준, 판단 근거가 바로 아래에 펼쳐집니다. 아래로 스크롤해 다음 항목도 확인하세요.</p></div>
     <div class="filters" role="group" aria-label="상태 필터">${[['all','전체',a.rows.length],...Object.keys(STATUS).map(k=>[k,STATUS[k].t,c[k]])].map(([k,t,n])=>`<button data-filter="${k}" aria-pressed="${fStatus===k}">${t} ${n}</button>`).join('')}</div></div>
-    <div class="table-wrap"><table><thead><tr><th>비교 항목</th><th>SOP 내용</th><th>KP 기준</th><th>상태</th><th>구분</th><th>우선순위</th></tr></thead><tbody>
-    ${rows.map(r=>`<tr class="click ${r.i===selRow?'sel':''}" data-row="${r.i}"><td><b style="font-weight:600">${esc(r.label)}</b></td><td class="small">${r.sop?esc(r.sop):'<span class="sub">해당 문장 없음</span>'}</td><td class="small">${r.kp?esc(r.kp):'<span class="sub">—</span>'}</td><td>${badge(r.status)}</td><td class="small">${esc(r.kind||'')}</td><td><span class="pri ${r.priority}">${PRI[r.priority]}</span></td></tr>`).join('')||'<tr><td colspan="6" class="sub">해당 상태의 항목이 없습니다.</td></tr>'}
-    </tbody></table></div>
+    <div class="table-wrap"><table><thead><tr><th>비교 항목</th><th>상태</th><th>구분</th><th>우선순위</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr class="click ${r.i===selRow?'sel':''}" data-row="${r.i}"><td><b style="font-weight:600">${esc(r.label)}</b></td><td>${badge(r.status)}</td><td class="small">${esc(r.kind||'')}</td><td><span class="pri ${r.priority}">${PRI[r.priority]}</span></td></tr>${r.i===selRow?`<tr class="detail-row"><td colspan="4">${resultDetail(a,r,sop)}</td></tr>`:''}`).join('')||'<tr><td colspan="4" class="sub">해당 상태의 항목이 없습니다.</td></tr>'}    </tbody></table></div>
   </div>
-  ${sel?resultDetail(a,sel,sop):''}`;
+`;
 }
 function markNums(text,vals,isKp){
   let s=esc(text);if(!vals||!vals.length)return s;
